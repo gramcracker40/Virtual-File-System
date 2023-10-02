@@ -1,2 +1,13 @@
-prettytable
-rich
+flask
+flask-smorest
+python-dotenv
+sqlalchemy
+flask-sqlalchemy
+flask-jwt-extended
+passlib
+flask-migrate
+flask-cors
+requests
+pyinstaller
+psycopg2-binary
+gunicorn
