@@ -7,12 +7,34 @@ from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, date, time
 
-blp = Blueprint("create", "create", description="All creation functionality")
+from models import PathModel
 
-@blp.route("/create")
-class Create(MethodView):
+blp = Blueprint("path", "path", description="Implementing functionality for paths")
+
+@blp.route("/path")
+class Path(MethodView):
     
     def post(self, creation_data):
         '''
         create a new file or directory
         '''
+
+
+    def delete(self, path_id):
+        '''
+        delete a path
+        '''
+
+
+    def get(self, path_id):
+        '''
+        get a path by id
+        '''
+
+
+    def patch(self, path_id):
+        '''
+        update a path's details
+        '''
+
+

@@ -18,7 +18,7 @@ import sqlalchemy
 
 # Internal
 from db import db
-from resources.create import blp as CreateBlueprint
+from resources.path import blp as CreateBlueprint
 
 
 # Environment variables

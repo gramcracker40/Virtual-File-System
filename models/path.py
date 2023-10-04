@@ -13,7 +13,7 @@ class PathModel(db.Model):
     
     permissions = db.Column(db.String, nullable=False)
     modification_time = db.Column(db.DateTime, nullable=False)
-    contents = db.Column(db.Binary)
+    contents = db.Column(db.LargeBinary)
     hidden = db.Column(db.Boolean, nullable=False)
 
     # file and group info
