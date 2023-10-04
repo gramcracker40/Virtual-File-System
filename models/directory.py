@@ -1,4 +1,5 @@
 from db import db
+import datetime
 
 class PathModel(db.Model):
     __tablename__ = "path"
@@ -19,4 +20,20 @@ class PathModel(db.Model):
     # file and group info
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=False)
-    
+
+"""
+obj = {
+    "pid": 2,
+    "filename": "file.txt",
+    "filetype": "txt",
+    "filesize": 512,
+    "permissions": "-rwxrwxrwx",
+    "hidden": True,
+    "modification_time": datetime.datetime.now(),
+    "user_id": 3,
+    "group_id": 1
+}
+
+test = PathModel(**obj)
+test.contents = open("file.txt", "rb").read()
+"""

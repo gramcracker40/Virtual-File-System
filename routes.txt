@@ -1,0 +1,100 @@
+|====================Create====================|
+Create File:
+|----------Params----------|
+  Name                Type
+  id                  integer         # file id
+  pid                 integer         # Parent directory ID 
+  filename            string
+  file_type           string
+  file_size           integer(bytes)  # Actual file size in bytes
+  owner               string          # Owner's username
+  group               string          # Group name
+  permissions         string          # Desired permissions
+  modification_time   datetime        # Modification time
+  content             blob            # Actual binary content
+  hidden              boolean         # True or False
+
+Create Directory:
+|----------Params----------|
+  Name                Type
+  id                  integer         # directory id
+  pid                 integer         # Parent directory ID 
+  filename            string
+  file_type           string          # Wether it is a file or a directory
+  file_size           integer(bytes)  # Maybe the size of all files and subdirectories below it? Or just null
+  owner               string          # Owner's username
+  group               string          # Group name
+  permissions         string          # Desired permissions
+  modification_time   datetime        # Modification time
+  content             blob            # Actual binary content
+  hidden              boolean         # True or False
+
+Copy File or Directory:
+|----------Params----------|
+  Name                Type
+  id                  integer         # file or directory id to be copied
+  target_id           integer         # directory id
+
+
+
+
+
+|====================Request====================|
+Directory Listing:
+|----------Params----------|
+  Name                Type
+  id                  integer         # file id
+
+Get File Contents:
+|----------Params----------|
+  Name                Type
+  id                  integer         # file id
+
+Get Users Currently Logged In:
+|----------Params----------|
+  None
+  
+
+#####################################################################
+# Should we keep track of the current directory in the file system? #
+# For example, the cd or pwd commands?                              #
+#####################################################################
+
+
+
+
+
+|====================Update====================|
+Move File or Directory:
+|----------Params----------|
+  Name                Type
+  id                  integer         # file or directory id to be moved
+  target_id           integer         # directory id
+
+Update File/Directory Permissions:
+|----------Params----------|
+  Name                Type
+  id                  integer         # file or directory id
+  permissions         string
+
+Change File Contents: (I think we can handle either the appending or overwriting from the shell code)
+|----------Params----------|
+  Name                Type
+  id                  integer         # file or directory id
+  contents            blob
+
+
+
+
+
+|====================Delete====================|
+Delete File:
+|----------Params----------|
+  Name                Type
+  id                  integer
+
+Delete Directory: (Should work recursively for all child directories and files)
+|----------Params----------|
+  Name                Type
+  id                  integer
+
