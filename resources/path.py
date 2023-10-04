@@ -8,17 +8,19 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, date, time
 
 from models import PathModel
+from schemas import NewPathSchema
 
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
 
 @blp.route("/path")
 class Path(MethodView):
     
+    @blp.arguments(NewPathSchema)
     def post(self, creation_data):
         '''
         create a new file or directory
         '''
-
+        
 
     def delete(self, path_id):
         '''
