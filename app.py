@@ -18,8 +18,10 @@ import sqlalchemy
 
 # Internal
 from db import db
-from resources.path import blp as CreateBlueprint
-
+from resources.path import blp as PathBlueprint
+from resources.users import blp as UserBlueprint
+from resources.groups import blp as GroupBlueprint
+from resources.session import blp as SessionBlueprint
 
 # Environment variables
 from dotenv import dotenv_values
@@ -58,9 +60,11 @@ def app():
     with app.app_context():
         db.create_all()
 
-    api.register_blueprint(CreateBlueprint)
+    api.register_blueprint(PathBlueprint)
+    api.register_blueprint(UserBlueprint)
+    api.register_blueprint(GroupBlueprint)
+    api.register_blueprint(SessionBlueprint)
     
-
     return app
 
 

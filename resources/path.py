@@ -1,3 +1,4 @@
+import sys
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
@@ -20,22 +21,24 @@ class Path(MethodView):
         '''
         create a new file or directory
         '''
-        new_model = PathModel(**creation_data)
+        new_path = PathModel(**creation_data)
         if "contents" not in creation_data.keys():
-            new_model.contents = bytes("")
+            new_path.contents = bytes(b"")
 
         if "permissions" not in creation_data.keys():
             init = "d" if creation_data.file_type == "directory" else "-"
-            new_model.permissions = f"{init}rw-r--r--" # default permissions
+            new_path.permissions = f"{init}rw-r--r--" # default permissions
 
-        new_model.hidden = True if new_model.file_name[0] == "." else False
-        
+        new_path.hidden = True if new_path.file_name[0] == "." else False
+        new_path.modification_time = datetime.now()
+        new_path.file_size = sys.getsizeof(new_path.contents)
+
         try:
-            db.session.add(new_model)
+            db.session.add(new_path)
             db.session.commit()
 
         except IntegrityError as err:
-            abort(400)
+            abort(400, message=f"Error: {err}")
 
         except SQLAlchemyError as err:
             abort(500, message=f"Internal database error\n\n{err}")
