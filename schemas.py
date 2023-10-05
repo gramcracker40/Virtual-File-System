@@ -18,7 +18,7 @@ class NewPathSchema(Schema):
     pid = fields.Int(required=True)
     file_name = fields.Str(required=True)
     file_type = fields.Str(validate=validate.OneOf(["file", "directory"]))
-    contents = fields.BytesField()
+    contents = BytesField()
     permissions = fields.Str()
 
 #  # attributes
