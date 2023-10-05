@@ -2,7 +2,7 @@ import requests, json, datetime
 
 url = "http://127.0.0.1:5000"
 path_url = f"{url}/path"
-
+session_id = 1
 
 def create_path(url:str, path_data:dict):
     '''
@@ -18,12 +18,9 @@ def create_path(url:str, path_data:dict):
 
 
 test_path_data = {
-    "pid": 2,
+    "session_id": session_id,
     "file_name": "file.txt",
-    "file_type": "file",
-    "permissions": "-rwxrwxrwx",
-    #"user_id": 3,   add whenever sessions are implemented
-    #"group_id": 1
+    "file_type": "file" 
 }
 
 new_path = create_path(path_url, test_path_data)
