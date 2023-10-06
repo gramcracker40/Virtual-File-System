@@ -15,8 +15,6 @@ def create_path(url:str, path_data:dict):
     print(json.dumps(req_data, indent=2))
 
 
-
-
 test_path_data = {
     "session_id": session_id,
     "file_name": "file.txt",

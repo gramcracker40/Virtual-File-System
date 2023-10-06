@@ -15,9 +15,13 @@ from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
 import sqlalchemy
+import requests
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 # Internal
 from db import db
+from helpers.sessions import session_timer_check
 from resources.path import blp as PathBlueprint
 from resources.users import blp as UserBlueprint
 from resources.groups import blp as GroupBlueprint
@@ -29,6 +33,14 @@ config = dotenv_values(".flaskenv")
 
 production = bool(int(config["PRODUCTION"]))
 db_uri = config["DBHOST"] if production else None
+
+
+### adds background job for the sessions, runs every 30 seconds to check if
+### any sessions are inactive
+scheduler = BackgroundScheduler()
+scheduler.add_job(session_timer_check, 'interval', seconds=30)
+scheduler.start()
+
 
 # factory pattern --> .flaskenv FLASK_APP, allows for simple "flask run" 
 # command when running the app locally
@@ -53,10 +65,8 @@ def app():
     db.init_app(app)
     
     migrate = Migrate(app, db)
-
     api = Api(app)
    
-
     with app.app_context():
         db.create_all()
 
@@ -64,7 +74,7 @@ def app():
     api.register_blueprint(UserBlueprint)
     api.register_blueprint(GroupBlueprint)
     api.register_blueprint(SessionBlueprint)
-    
+
     return app
 
 

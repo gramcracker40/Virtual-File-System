@@ -1,2 +1,2 @@
-# defined here simply so all resources can access session data.
+# defined here simply so all resources/helpers can access session data.
 sessions = {}

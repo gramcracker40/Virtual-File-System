@@ -1,6 +1,6 @@
 |====================Create====================|
 Create File:
-|----------Params----------|
+|----------Params----------| DONE
   Name                Type
   id                  integer         # file id
   pid                 integer         # Parent directory ID 
@@ -14,7 +14,7 @@ Create File:
   content             blob            # Actual binary content
   hidden              boolean         # True or False
 
-Create Directory:
+Create Directory: DONE
 |----------Params----------|
   Name                Type
   id                  integer         # directory id
@@ -29,7 +29,7 @@ Create Directory:
   content             blob            # Actual binary content
   hidden              boolean         # True or False
 
-Copy File or Directory:
+Copy File or Directory:   # NOTE: Can be handled in shell. DONE
 |----------Params----------|
   Name                Type
   id                  integer         # file or directory id to be copied
@@ -40,6 +40,11 @@ Copy File or Directory:
 
 
 |====================Request====================|
+NOTE:  Going to be implemented in Utilities. But... We will need to
+  implement recursive function to search through paths and reconstruct path name if they
+  give an absolute path or even a deeper relative path. Must work for all... if no arguments,
+  return the cwd paths listings. 
+
 Directory Listing:
 |----------Params----------|
   Name                Type
@@ -61,24 +66,23 @@ Get Users Currently Logged In:
 #####################################################################
 
 
-
-
-
-|====================Update====================|
+|====================Update====================| DONE
+--- NOTE: All can be updated through single 'patch' method. 
+--- NOTE: PathSpecific in resources/paths
 Move File or Directory:
 |----------Params----------|
   Name                Type
   id                  integer         # file or directory id to be moved
   target_id           integer         # directory id
 
-Update File/Directory Permissions:
+Update File/Directory Permissions: 
 |----------Params----------|
   Name                Type
   id                  integer         # file or directory id
   permissions         string
 
 Change File Contents: (I think we can handle either the appending or overwriting from the shell code)
-|----------Params----------|
+|----------Params----------|  NOTE: Yes I agree. DONE
   Name                Type
   id                  integer         # file or directory id
   contents            blob
@@ -88,13 +92,75 @@ Change File Contents: (I think we can handle either the appending or overwriting
 
 
 |====================Delete====================|
-Delete File:
+Delete File: DONE
 |----------Params----------|
   Name                Type
   id                  integer
 
-Delete Directory: (Should work recursively for all child directories and files)
+Delete Directory: (Should work recursively for all child directories and files) DONE
 |----------Params----------|
   Name                Type
   id                  integer
+
+  Write File: Write data to an existing file, potentially appending to the existing content. DONE
+
+
+Move File or Directory: Move a file or directory from one location to another within the file system. DONE
+
+
+Copy File or Directory: Copy a file or directory to a new location within the file system.
+
+
+Change Ownership: Change the owner of a file or directory.
+
+
+Change Group: Change the group associated with a file or directory.
+
+
+Change Permissions: Modify the permissions (e.g., read, write, execute) of a file or directory.
+
+
+Get File or Directory Information: Retrieve metadata (e.g., size, modification time) about a file or directory.
+
+
+Search for Files: Search for files or directories based on criteria like name, type, owner, or permissions.
+
+
+Access Control: Implement access control checks to determine whether a user has permission to perform specific operations on files or directories.
+
+
+File Upload: Upload a file from an external source (e.g., a client application) and store it in the file system.
+
+
+File Download: Retrieve a file from the file system and provide it for download to an external client.
+
+
+File Versioning: Implement version control for files to track changes and revisions.
+
+
+File Metadata Management: Allow users to add and manage metadata (e.g., tags, descriptions) for files and directories.
+
+
+File and Directory Renaming: Rename files and directories.
+
+
+Hidden Files and Directories Handling: Implement functionality to hide or unhide files and directories based on naming conventions or attributes.
+
+
+File and Directory Permissions Enforcement: Enforce access permissions to ensure that users can only perform actions allowed by their permissions.
+
+
+Error Handling and Logging: Implement error handling to manage and log any exceptions or issues that arise during file system operations.
+
+
+File and Directory Locking: Provide mechanisms to lock and unlock files and directories to prevent concurrent access conflicts.
+
+
+File and Directory Monitoring: Implement mechanisms to monitor changes to files and directories (e.g., using inotify or similar technologies).
+
+
+File and Directory Permissions Inheritance: Implement inheritance of permissions from parent directories to child directories and files.
+
+
+Trash or Recycle Bin: Implement a feature to move deleted files and directories to a trash or recycle bin for potential recovery.
 
