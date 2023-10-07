@@ -20,13 +20,12 @@ class NewPathSchema(Schema):
     file_type = fields.Str(validate=validate.OneOf(["file", "directory"]))
     session_id = fields.Str(required=True)
     pid = fields.Int()
-    contents = BytesField()
-    permissions = fields.Str()
+    contents = fields.Str()
 
 class UpdatePathSchema(Schema):
     # add last_updated?
     permissions = fields.Str()
-    contents = BytesField()
+    contents = fields.Str()
     file_name = fields.Str()
     pid = fields.Int()
 
@@ -36,7 +35,7 @@ class PathSchema(Schema):
     file_type = fields.Str()
     file_size = fields.Int()
     modification_time = fields.DateTime()
-    contents = BytesField()
+    contents = fields.Str()
     permissions = fields.Str()
     user_id = fields.Int()
     group_id = fields.Int()
