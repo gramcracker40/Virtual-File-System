@@ -21,9 +21,9 @@ blp = Blueprint("utilities", "utilities", description="Implementing functionalit
 
 
 
-def search_path(path:str, session_id:str) -> int:
+def confirm_path(path:str, session_id:str) -> int:
     '''
-    returns: pid of given path
+    returns: id of given path
     
     given an absolute or relative path. search for it in the file system. 
     ../../ is back two directories. ../ one, etc...
@@ -39,14 +39,29 @@ def search_path(path:str, session_id:str) -> int:
     path_parts = path.split("/")
     dir_name = path_parts[-1]
 
-    potential_paths = PathModel.query.filter(PathModel.file_name == dir_name)
+    potential_paths = PathModel.query.filter(PathModel.file_name == dir_name and PathModel.file_type == "directory")
 
     for each in potential_paths:
         if path_type == "rel":
             pass
         else: # absolute path must end up at root, 
             #  so if you can trace the pid's back to 0 it exists
-            pass
+            # Save the initial file/path id
+            initial_id = each.id
+            each_itr = each
+
+            for part in path_parts.reverse():
+                # Check the file name, if it matches the path part, move up to the parent and get the name. Repeat until at root(id of 0)
+                if each_itr.id == 0:
+                    return initial_id
+                
+                # Decides if we move on to the next pid
+                if each_itr.file_name == part:
+                    each_itr = PathModel.query.filter(PathModel.id == each_itr.pid)
+                else:
+                    return -1
+
+                
 
 
 @blp.route("/utilities/cd")
