@@ -11,9 +11,8 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 
 # internal
-from helpers.sessions import session_timer_check
 from models import PathModel
-from schemas import NewPathSchema, PathSchema, UpdatePathSchema
+from schemas import UtilitySchema
 from session_handler import sessions
 from db import db
 
@@ -50,11 +49,6 @@ def search_path(path:str, session_id:str) -> int:
             pass
 
 
-
-
-
-
-
 @blp.route("/utilities/cd")
 class ChangeDirectory(MethodView):
     '''
@@ -62,7 +56,7 @@ class ChangeDirectory(MethodView):
     can specify absolute or relative path. 
     see, CDschema for further clarity.  
     '''
-    
+    @blp.arguments(UtilitySchema)
     def post(self, cd_params):
         '''
         
@@ -79,7 +73,7 @@ class ListDirectory(MethodView):
     can specify pid. 
     path must be a valid directory or 404 will be returned. 
     '''
-    #LS-Schema TODO
+    @blp.arguments(UtilitySchema)
     def get(self, ls_params):
         '''
         get all files in the directory specified.
