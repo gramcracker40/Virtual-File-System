@@ -45,6 +45,5 @@ class PathSchema(Schema):
 
 class UtilitySchema(Schema):
     path = fields.Str()
-    pid = fields.Int()
     session_id = fields.Str(required=True)
     
