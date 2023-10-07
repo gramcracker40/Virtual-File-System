@@ -103,7 +103,9 @@ Delete Directory: (Should work recursively for all child directories and files) 
   Name                Type
   id                  integer
 
-  Write File: Write data to an existing file, potentially appending to the existing content. DONE
+  
+
+Write File: Write data to an existing file, potentially appending to the existing content. DONE
 
 
 Move File or Directory: Move a file or directory from one location to another within the file system. DONE
@@ -121,10 +123,7 @@ Change Group: Change the group associated with a file or directory.
 Change Permissions: Modify the permissions (e.g., read, write, execute) of a file or directory.
 
 
-Get File or Directory Information: Retrieve metadata (e.g., size, modification time) about a file or directory.
-
-
-Search for Files: Search for files or directories based on criteria like name, type, owner, or permissions.
+Search Path: Search for files or directories based on criteria like name, type, owner, or permissions.
 
 
 Access Control: Implement access control checks to determine whether a user has permission to perform specific operations on files or directories.

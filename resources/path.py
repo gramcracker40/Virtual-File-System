@@ -125,6 +125,9 @@ class PathSpecific(MethodView):
             else:
                 setattr(path, key, update_data[key].encode())
 
+        path.modification_time = datetime.now()
+
+
         try:
             db.session.commit()
 
