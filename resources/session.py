@@ -10,12 +10,13 @@ from datetime import datetime, date, time
 from models import PathModel, UserModel
 from schemas import UserSchema
 from session_handler import sessions
+from helpers.sessions import rand_string
 
 
-# defines the flask_smorest "blueprint" that will map out your routes in an organized fashion
+# flask_smorest "blueprint" that will map routes in organized fashion
 blp = Blueprint("session", "session", description="Implementing functionality for sessions")
-# helps keep track of the session number. if a 
-session_counter = 0
+
+# # session timeout duration. 
 session_logout_duration = time(0,30,0) # (hours, minutes, seconds)
 
 
@@ -28,18 +29,17 @@ class Session(MethodView):
         post your login info, username and password to initiate a session.
         Record the session details to make subsequent calls to the api. 
         '''
-        global session_counter
         user = UserModel.query.filter_by(username=login_data['username']).first()
         
-        session_counter += 1
+        id = rand_string(size=32)
         # check to see if user_id already has a session? or just overwrite the old session data?
         if user and pbkdf2_sha256.verify(login_data["password"], user.password):
-            sessions[session_counter] = {
+            sessions[id] = {
                 "success": True, "user_id": user.id, 
-                "group_id": user.group.id, "session_id": session_counter,
+                "group_id": user.group.id, "session_id": id,
                 "username": user.username, "cwd_id": 0, "active":True, "last_active": datetime.now()
             }
-            return sessions[session_counter], 201
+            return sessions[id], 201
         
         abort(401, message="Invalid credentials")
 

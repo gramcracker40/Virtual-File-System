@@ -31,9 +31,9 @@ from resources.session import blp as SessionBlueprint
 from dotenv import dotenv_values
 config = dotenv_values(".flaskenv")
 
+# env vars
 production = bool(int(config["PRODUCTION"]))
 db_uri = config["DBHOST"] if production else None
-
 
 ### adds background job for the sessions, runs every 30 seconds to check if
 ### any sessions are inactive
@@ -41,9 +41,8 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(session_timer_check, 'interval', seconds=30)
 scheduler.start()
 
-
 # factory pattern --> .flaskenv FLASK_APP, allows for simple "flask run" 
-# command when running the app locally
+# command when running the app locally, .flaskenv handles configuration
 def app():
     app = Flask(__name__)
     CORS(app)

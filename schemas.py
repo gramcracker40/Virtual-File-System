@@ -18,11 +18,13 @@ class NewGroupSchema(Schema):
 class NewPathSchema(Schema):
     file_name = fields.Str(required=True)
     file_type = fields.Str(validate=validate.OneOf(["file", "directory"]))
-    session_id = fields.Int(required=True)
+    session_id = fields.Str(required=True)
+    pid = fields.Int()
     contents = BytesField()
     permissions = fields.Str()
 
 class UpdatePathSchema(Schema):
+    # add last_updated?
     permissions = fields.Str()
     contents = BytesField()
     file_name = fields.Str()
@@ -39,3 +41,10 @@ class PathSchema(Schema):
     user_id = fields.Int()
     group_id = fields.Int()
     pid = fields.Int()
+
+
+class UtilitySchema(Schema):
+    path = fields.Str()
+    pid = fields.Int()
+    session_id = fields.Str(required=True)
+    

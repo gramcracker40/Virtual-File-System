@@ -42,4 +42,4 @@ class Users(MethodView):
 
         new_user = UserModel.query.filter(UserModel.username == user_data["username"]).first()
         
-        return {"message": "User created successfully", "user_id": new_user.id}
+        return {"message": "User created successfully", "user_id": new_user.id}, 201

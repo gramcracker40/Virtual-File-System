@@ -13,7 +13,6 @@ from db import db
 
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
 
-
 @blp.route("/path")
 class Path(MethodView):
     '''
@@ -42,13 +41,20 @@ class Path(MethodView):
             init = "d" if creation_data["file_type"] == "directory" else "-"
             new_path.permissions = f"{init}rw-r--r--"  # default permissions
 
+        # if 'pid' is not in the JSON object, set the pid of the created file to the 
+        # # sessions 'cwd'
+        if "pid" not in creation_data.keys():
+            new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
+        else:
+            new_path.pid = creation_data["pid"]
+
+
         # set file attributes not needed from user. handled by file system.
         new_path.hidden = True if new_path.file_name[0] == "." else False
         new_path.modification_time = datetime.now()
         new_path.file_size = sys.getsizeof(new_path.contents)
-        new_path.pid = sessions[int(creation_data["session_id"])]["cwd_id"]
-        new_path.user_id = sessions[int(creation_data["session_id"])]["user_id"]
-        new_path.group_id = sessions[int(creation_data["session_id"])]["group_id"]
+        new_path.user_id = sessions[creation_data["session_id"]]["user_id"]
+        new_path.group_id = sessions[creation_data["session_id"]]["group_id"]
 
         # check to see if file_name passed already exists in cwd.
         paths = PathModel.query.filter(PathModel.pid == new_path.pid)
@@ -128,7 +134,9 @@ class PathSpecific(MethodView):
 
         return {"Success": True}, 201
 
+    @blp.response(200, PathSchema)
     def get(self, path_id):
         """
         get a list of paths that have the same pid (in the same directory)
         """
+        return PathModel.query.get_or_404(path_id)

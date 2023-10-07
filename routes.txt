@@ -14,6 +14,7 @@ Create File:
   content             blob            # Actual binary content
   hidden              boolean         # True or False
 
+
 Create Directory: DONE
 |----------Params----------|
   Name                Type
@@ -29,14 +30,12 @@ Create Directory: DONE
   content             blob            # Actual binary content
   hidden              boolean         # True or False
 
+
 Copy File or Directory:   # NOTE: Can be handled in shell. DONE
 |----------Params----------|
   Name                Type
   id                  integer         # file or directory id to be copied
   target_id           integer         # directory id
-
-
-
 
 
 |====================Request====================|
@@ -45,10 +44,12 @@ NOTE:  Going to be implemented in Utilities. But... We will need to
   give an absolute path or even a deeper relative path. Must work for all... if no arguments,
   return the cwd paths listings. 
 
+
 Directory Listing:
 |----------Params----------|
   Name                Type
   id                  integer         # file id
+
 
 Get File Contents:
 |----------Params----------|
