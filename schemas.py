@@ -48,3 +48,6 @@ class UtilitySchema(Schema):
     pid = fields.Int()
     session_id = fields.Str(required=True)
     
+
+class SessionDeleteSchema(Schema):
+    session_id = fields.Str(required=True)

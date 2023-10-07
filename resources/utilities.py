@@ -20,7 +20,6 @@ from db import db
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
 
-
 def search_path(path:str, session_id:str) -> int:
     '''
     returns: pid of given path

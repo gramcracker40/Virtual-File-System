@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, date, time
 
 from models import PathModel, UserModel
-from schemas import UserSchema
+from schemas import UserSchema, SessionDeleteSchema
 from session_handler import sessions
 from helpers.sessions import rand_string
 
@@ -43,13 +43,24 @@ class Session(MethodView):
         
         abort(401, message="Invalid credentials")
 
+    @blp.arguments(SessionDeleteSchema)
+    def delete(self, data):
+        '''
+        delete a session given an ID.
+        '''
+        try:
+            del sessions[data["session_id"]]
+            return {"Success": True}, 200
+        except KeyError as err:
+            abort(404, message=f"Error: session {err} does not exist.")
     
     def put(self):
         '''
-        update all sessions activity. background task runs this route every 30 seconds
+        update all sessions activity. background task runs this route every 30 seconds. 
+        filters all of the inactive sessions out of the sessions object. 
         '''
         start_time = datetime.now()
-       
+
         # update the activity if they've been active 
         # in the last session_logout_duration
         for session in sessions: 
@@ -60,6 +71,8 @@ class Session(MethodView):
 
             if time_obj > session_logout_duration:
                 sessions[session]["active"] = False
+                del sessions[session]
+
 
         return {"Success": True}, 200
 
