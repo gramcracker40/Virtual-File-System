@@ -34,12 +34,12 @@ class Path(MethodView):
 
         # work with "non-required" parameters if user does not clarify.
         # # Check NewPathSchema for all parameters
+        if "contents" in creation_data.keys() and creation_data["file_type"] == "directory":
+            abort(400, "Cannot pass contents when creating a directory.")
         if "contents" not in creation_data.keys():
             new_path.contents = bytes(b"")
-
-        if "permissions" not in creation_data.keys():
-            init = "d" if creation_data["file_type"] == "directory" else "-"
-            new_path.permissions = f"{init}rw-r--r--"  # default permissions
+        else:
+            new_path.contents = creation_data["contents"].encode()
 
         # if 'pid' is not in the JSON object, set the pid of the created file to the 
         # # sessions 'cwd'
@@ -50,6 +50,8 @@ class Path(MethodView):
 
 
         # set file attributes not needed from user. handled by file system.
+        path_type = "d" if creation_data["file_type"] == "directory" else "-"
+        new_path.permissions = f"{path_type}rw-r--r--"  # default permissions
         new_path.hidden = True if new_path.file_name[0] == "." else False
         new_path.modification_time = datetime.now()
         new_path.file_size = sys.getsizeof(new_path.contents)

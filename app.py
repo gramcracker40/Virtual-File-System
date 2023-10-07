@@ -26,6 +26,7 @@ from resources.path import blp as PathBlueprint
 from resources.users import blp as UserBlueprint
 from resources.groups import blp as GroupBlueprint
 from resources.session import blp as SessionBlueprint
+from resources.utilities import blp as UtilityBlueprint
 
 # Environment variables
 from dotenv import dotenv_values
@@ -73,6 +74,7 @@ def app():
     api.register_blueprint(UserBlueprint)
     api.register_blueprint(GroupBlueprint)
     api.register_blueprint(SessionBlueprint)
+    api.register_blueprint(UtilityBlueprint)
 
     return app
 
