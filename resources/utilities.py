@@ -16,7 +16,7 @@ from schemas import UtilitySchema
 from session_handler import sessions
 from db import db
 from errors import InsufficientParamaters
-from helpers.utilities import confirm_path, confirm_pid, construct_path
+from helpers.utilities import confirm_path, confirm_path_by_id, construct_path, change_directory, print_working_directory
 
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
@@ -31,10 +31,10 @@ class ChangeDirectory(MethodView):
     @blp.arguments(UtilitySchema)
     def post(self, cd_params):
         '''
-        given an absolute or relative path change the 'cwd'
-            of the calling session. 
-        '''
         
+        '''
+        new_dir_path = change_directory(cd_params["path"], cd_params["session_id"])
+        return {"new_path": new_dir_path}, 200
 
 
 
@@ -65,9 +65,9 @@ class PrintWorkingDirectory(MethodView):
     def get(self, pwd_params):
         '''
         '''
-        if "path" in pwd_params.keys():
-            id,path = confirm_path(pwd_params["path"], pwd_params["session_id"])
-            return {"id": id, "path": path}, 200
+        cwd_path = print_working_directory(pwd_params["session_id"])
+
+        return {"cwd": cwd_path}, 200
         
         # id,path = confirm_pid(pwd_params["session_id"])
         try:
