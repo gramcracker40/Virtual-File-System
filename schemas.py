@@ -8,22 +8,39 @@ class BytesField(fields.Field):
         if value is None or value == b'':
             raise ValidationError('Invalid value')
 
-class UserSchema(Schema):
-    username = fields.Str(required=True)
-    password = fields.Str(required=True, load_only=True)
-
 class NewGroupSchema(Schema):
     name = fields.Str(required=True)
 
+class NewUserSchema(Schema):
+    username = fields.Str(required=True)
+    password = fields.Str(required=True, load_only=True)
+
+class GroupSchema(Schema):
+    name = fields.Str(required=True)
+    users = fields.List(fields.Nested(NewUserSchema()), dump_only=True)
+
+class UserSchema(Schema):
+    id = fields.Int()
+    username = fields.Str()
+    groups = fields.List(fields.Nested(NewGroupSchema()), dump_only=True)
+
+class UpdateGroupSchema(Schema):
+    group_id = fields.Int()
+    group_name = fields.Str()
+    user_id = fields.Int()
+    username = fields.Str()
+    action = fields.Str(validate=validate.OneOf(["add", "remove"]), required=True)
+
+
 class NewPathSchema(Schema):
     file_name = fields.Str(required=True)
-    file_type = fields.Str(validate=validate.OneOf(["file", "directory"]))
+    file_type = fields.Str(validate=validate.OneOf(["file", "directory"]), required=True)
     session_id = fields.Str(required=True)
+    path = fields.Str()
     pid = fields.Int()
     contents = fields.Str()
 
 class UpdatePathSchema(Schema):
-    # add last_updated?
     permissions = fields.Str()
     contents = fields.Str()
     file_name = fields.Str()
@@ -41,11 +58,9 @@ class PathSchema(Schema):
     group_id = fields.Int()
     pid = fields.Int()
 
-
 class UtilitySchema(Schema):
     path = fields.Str()
     session_id = fields.Str(required=True)
     
-
 class SessionDeleteSchema(Schema):
     session_id = fields.Str(required=True)

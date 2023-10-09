@@ -55,7 +55,6 @@ def confirm_path(path:str, session_id:str) -> tuple((int, str)):
                     else:
                         return (-1, "")
     except TypeError as err:
-        # print("Something went wrong")
         abort(404, message=f"{err}")
 
 def confirm_pid(id:int = None, session_id:str = None) -> tuple((int, str)):

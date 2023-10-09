@@ -29,6 +29,7 @@ class Session(MethodView):
         post your login info, username and password to initiate a session.
         Record the session details to make subsequent calls to the api. 
         '''
+        #TODO add spam check and create lockouts after certain number of tries.
         user = UserModel.query.filter_by(username=login_data['username']).first()
         
         id = rand_string(size=32)
@@ -36,7 +37,7 @@ class Session(MethodView):
         if user and pbkdf2_sha256.verify(login_data["password"], user.password):
             sessions[id] = {
                 "success": True, "user_id": user.id, 
-                "group_id": user.group.id, "session_id": id,
+                "groups": user.group.id, "session_id": id,
                 "username": user.username, "cwd_id": 0, "active":True, "last_active": datetime.now()
             }
             return sessions[id], 201
@@ -60,6 +61,9 @@ class Session(MethodView):
         filters all of the inactive sessions out of the sessions object. 
         '''
         start_time = datetime.now()
+
+        #TODO: check the private key that only the background task should have access to.
+        #TODO: add private key generation to beginning and place as arg in background task. 
 
         # update the activity if they've been active 
         # in the last session_logout_duration

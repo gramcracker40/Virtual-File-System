@@ -6,7 +6,7 @@ from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from models import UserModel, GroupModel
-from schemas import UserSchema
+from schemas import NewUserSchema, UserSchema
 
 blp = Blueprint("users", "users", description="Implementing functionality for users")
 
@@ -14,7 +14,7 @@ blp = Blueprint("users", "users", description="Implementing functionality for us
 @blp.route("/users")
 class Users(MethodView):
 
-    @blp.arguments(UserSchema)
+    @blp.arguments(NewUserSchema)
     def post(self, user_data):
         '''
         creates a new user
@@ -28,8 +28,8 @@ class Users(MethodView):
             user = UserModel(
                 username=user_data['username'], 
                 password=pbkdf2_sha256.hash(user_data['password']),
-                group_id=default_group.id
             )
+            user.groups.append(default_group)
 
             db.session.add(user)
             db.session.commit()
@@ -43,3 +43,27 @@ class Users(MethodView):
         new_user = UserModel.query.filter(UserModel.username == user_data["username"]).first()
         
         return {"message": "User created successfully", "user_id": new_user.id}, 201
+
+    @blp.response(200, UserSchema(many=True))
+    def get(self):
+        '''
+        get all users. 
+        '''
+        return UserModel.query.all()
+
+
+@blp.route("/users/<int:user_id>")
+class UserSpecific(MethodView):
+    '''
+    perform operations on a given user
+    '''
+    @blp.response(200, UserSchema)
+    def get(self, user_id):
+        '''
+        get a users info by id
+        '''
+        return UserModel.query.get_or_404(user_id)
+
+
+
+
