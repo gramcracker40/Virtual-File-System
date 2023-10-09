@@ -9,7 +9,7 @@ from models import PathModel
 from schemas import NewPathSchema, PathSchema, UpdatePathSchema
 from session_handler import sessions
 from db import db
-from helpers.utilities import confirm_path, confirm_pid
+from helpers.utilities import confirm_path
 
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
 
