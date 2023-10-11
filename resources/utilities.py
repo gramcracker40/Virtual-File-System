@@ -37,7 +37,6 @@ class ChangeDirectory(MethodView):
         return {"new_path": new_dir_path}, 200
 
 
-
 @blp.route("/utilities/ls")
 class ListDirectory(MethodView):
     '''
