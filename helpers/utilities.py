@@ -127,7 +127,7 @@ def confirm_path(path:str, session_id:str) -> tuple((int, str)):
     except TypeError as err:
         abort(404, message=f"{err}")
 
-def confirm_path_by_id(id:int = None, session_id:str = None) -> tuple((int, str)):
+def confirm_path_by_id(id:int = None, session_id:str = None) -> (int, str):
     try:
         if not session_id and not id:
             raise InsufficientParamaters

@@ -12,7 +12,7 @@ from datetime import datetime
 
 # internal
 from models import PathModel
-from schemas import UtilitySchema
+from schemas import UtilitySchema, PathSchema
 from session_handler import sessions
 from db import db
 from errors import InsufficientParamaters
@@ -31,9 +31,14 @@ class ChangeDirectory(MethodView):
     @blp.arguments(UtilitySchema)
     def post(self, cd_params):
         '''
-        
+        change the working directory
         '''
-        new_dir_path = change_directory(cd_params["path"], cd_params["session_id"])
+        try:
+            new_dir_path = change_directory(path=cd_params["path"], session_id=cd_params["session_id"])
+        except KeyError as err:
+            abort(400, message="SessionID does not exist...")
+
+
         return {"new_path": new_dir_path}, 200
 
 
@@ -45,13 +50,46 @@ class ListDirectory(MethodView):
     path must be a valid directory or 404 will be returned. 
     '''
     @blp.arguments(UtilitySchema)
+    @blp.response(200, PathSchema)
     def get(self, ls_params):
         '''
         get all files in the directory specified.
         no params passed = return sessions 'cwd'.
         can specify absolute path or relative path from
-        the sessions 'cwd'.
+        the sessions 'cwd' using 'path'.
         '''
+        try:
+            if 'path' not in ls_params.keys():
+                cwd_id = sessions[ls_params['session_id']]['cwd_id']
+            else:
+                cwd_id = confirm_path(ls_params['path'], ls_params['session_id'])[0]
+            
+            print(f"listing directory id: {cwd_id}")
+
+            path = PathModel.query.get_or_404(cwd_id) if cwd_id != 0 else 0
+            
+            if path == 0:
+                search_id = 0
+            elif path.file_type == "directory":
+                search_id = path.id
+            elif path.file_type == "file":
+                search_id = path.pid
+
+            print(f"SearchID: {search_id}")
+
+            paths = [{**PathModel.query.filter(PathModel.pid == search_id)}]
+            for each in paths:
+                del paths[each]['contents']
+
+            return paths
+        except KeyError:
+            abort(404, message="SessionID does not exist")
+
+
+        
+
+
+
 
 
 @blp.route("/utilities/pwd")
@@ -64,7 +102,9 @@ class PrintWorkingDirectory(MethodView):
     def get(self, pwd_params):
         '''
         '''
-        cwd_path = print_working_directory(pwd_params["session_id"])
+        cwd_path = print_working_directory(pwd_params["session_id"]) \
+            if pwd_params["session_id"] in sessions \
+            else abort(400, message="SessionID is invalid")
 
         return {"cwd": cwd_path}, 200
     
