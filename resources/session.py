@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, date, time
 
 from models import PathModel, UserModel
-from schemas import UserSchema, SessionDeleteSchema
+from schemas import NewUserSchema, SessionDeleteSchema
 from session_handler import sessions
 from helpers.sessions import rand_string
 
@@ -23,7 +23,7 @@ session_logout_duration = time(0,30,0) # (hours, minutes, seconds)
 @blp.route("/session")
 class Session(MethodView):
 
-    @blp.arguments(UserSchema)
+    @blp.arguments(NewUserSchema)
     def post(self, login_data):
         '''
         post your login info, username and password to initiate a session.
@@ -33,11 +33,10 @@ class Session(MethodView):
         user = UserModel.query.filter_by(username=login_data['username']).first()
         
         id = rand_string(size=32)
-        # check to see if user_id already has a session? or just overwrite the old session data?
         if user and pbkdf2_sha256.verify(login_data["password"], user.password):
             sessions[id] = {
                 "success": True, "user_id": user.id, 
-                "groups": user.group.id, "session_id": id,
+                "groups": [each.id for each in user.groups], "session_id": id,
                 "username": user.username, "cwd_id": 0, "active":True, "last_active": datetime.now()
             }
             return sessions[id], 201

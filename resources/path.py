@@ -57,6 +57,7 @@ class Path(MethodView):
 
         # determine the pid of the new path being created. this function can accept a pid, path
         # # or if they decide not to pass any of them it will use the sessions cwd.
+        print("Here 1")
         if "pid" in creation_data.keys():
             new_path.pid = creation_data["pid"]
         elif "path" in creation_data.keys():
@@ -64,6 +65,7 @@ class Path(MethodView):
             temp = PathModel.query.get_or_404(
                 id, description="directory does not exist"
             )
+            print("Here 2")
 
             if temp.file_type == "directory":
                 new_path.pid = id
@@ -74,14 +76,19 @@ class Path(MethodView):
                 )
         else:
             new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
+        
+        print("Here 3")
 
         # really just a check to make sure the pid set exists and is a directory
-        parent_directory = PathModel.query.get_or_404(new_path.pid)
-        if parent_directory.file_type == "file":
+        parent_directory = PathModel.query.get_or_404(new_path.pid, description="Could not find parent directory.").file_type \
+            if new_path.pid != 0 else "directory" 
+        
+        if parent_directory == "file":
             abort(
                 400,
                 message="Can not create a file inside of a file. Please specify a valid directory.",
             )
+        print("Here 4")
 
         # set file attributes not needed from user. handled by file system.
         path_type = (
@@ -92,7 +99,7 @@ class Path(MethodView):
         new_path.modification_time = datetime.now()
         new_path.file_size = sys.getsizeof(new_path.contents)
         new_path.user_id = sessions[creation_data["session_id"]]["user_id"]
-        new_path.group_id = sessions[creation_data["session_id"]]["group_id"]
+        new_path.group_id = sessions[creation_data["session_id"]]["groups"][0] # add their first group id only. 
 
         # check to see if file_name passed already exists in cwd.
         # prevents duplicates in our confirm_path function.
@@ -116,7 +123,7 @@ class Path(MethodView):
 
         return {
             "Success": True,
-            "message": f"Path name - {new_path.file_name} created in {parent_directory.file_name}",
+            "message": f"Path name - {new_path.file_name} created in directory id:{new_path.pid}",
         }, 201
 
     @blp.response(200, PathSchema(many=True))
