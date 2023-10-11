@@ -67,10 +67,4 @@ class PrintWorkingDirectory(MethodView):
         cwd_path = print_working_directory(pwd_params["session_id"])
 
         return {"cwd": cwd_path}, 200
-        
-        # id,path = confirm_pid(pwd_params["session_id"])
-        try:
-            id,path = confirm_pid()
-            return {"id": id, "path": path}, 200
-        except TypeError as e:
-            print("TypeError: cannot unpack non-iterable NoneType object")
+    
