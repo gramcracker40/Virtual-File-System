@@ -21,8 +21,6 @@ from helpers.utilities import confirm_path, confirm_path_by_id, construct_path, 
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
 
-
-
 @blp.route("/utilities/cd")
 class ChangeDirectory(MethodView):
     '''
@@ -45,7 +43,6 @@ class ListDirectory(MethodView):
     '''
     grabs all the files from the specified directory. 
     can specify absolute or relative paths.
-    can specify pid. 
     path must be a valid directory or 404 will be returned. 
     '''
     @blp.arguments(UtilitySchema)
@@ -56,6 +53,7 @@ class ListDirectory(MethodView):
         can specify absolute path or relative path from
         the sessions 'cwd'.
         '''
+
 
 @blp.route("/utilities/pwd")
 class PrintWorkingDirectory(MethodView):
@@ -72,13 +70,8 @@ class PrintWorkingDirectory(MethodView):
         return {"cwd": cwd_path}, 200
         
         # id,path = confirm_pid(pwd_params["session_id"])
-        # try:
-        #     id,path = confirm_pid()
-        #     return {"id": id, "path": path}, 200
-        # except TypeError as e:
-        #     print("TypeError: cannot unpack non-iterable NoneType object")
-#PWD
-
-#LS
-
-#CD
+        try:
+            id,path = confirm_pid()
+            return {"id": id, "path": path}, 200
+        except TypeError as e:
+            print("TypeError: cannot unpack non-iterable NoneType object")

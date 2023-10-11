@@ -125,7 +125,6 @@ def confirm_path(path:str, session_id:str) -> tuple((int, str)):
             # print(reconstructed_path)
             # return (candidate_path.id, reconstructed_path) if candidate_path != None else (-1, "")
     except TypeError as err:
-        # print("Something went wrong")
         abort(404, message=f"{err}")
 
 def confirm_path_by_id(id:int = None, session_id:str = None) -> tuple((int, str)):

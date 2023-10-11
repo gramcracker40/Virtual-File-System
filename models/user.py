@@ -8,5 +8,4 @@ class UserModel(db.Model):
     username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
 
-    group_id = db.Column(db.Integer, db.ForeignKey("group.id"), nullable=False)
-    group = db.relationship("GroupModel", back_populates="users")
+    groups = db.relationship("GroupModel", secondary="users_groups", back_populates="users")

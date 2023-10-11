@@ -5,4 +5,4 @@ class GroupModel(db.Model):
     id = db.Column(db.Integer, unique=True, primary_key=True)
     name = db.Column(db.String, unique=True, nullable=False)
     
-    users = db.relationship("UserModel", back_populates="group")
+    users = db.relationship("UserModel", secondary="users_groups", back_populates="groups")
