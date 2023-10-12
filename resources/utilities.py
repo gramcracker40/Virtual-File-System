@@ -49,8 +49,9 @@ class ListDirectory(MethodView):
     can specify absolute or relative paths.
     path must be a valid directory or 404 will be returned. 
     '''
+
+    @blp.response(200, PathSchema(many=True))    
     @blp.arguments(UtilitySchema)
-    @blp.response(200, PathSchema)
     def get(self, ls_params):
         '''
         get all files in the directory specified.
@@ -77,9 +78,13 @@ class ListDirectory(MethodView):
 
             print(f"SearchID: {search_id}")
 
-            paths = [{**PathModel.query.filter(PathModel.pid == search_id)}]
+            all_paths = PathModel.query.filter(PathModel.pid == search_id)
+            
+            paths = [path.__dict__ for path in all_paths]
             for each in paths:
-                del paths[each]['contents']
+                del each['contents'], each['_sa_instance_state']
+
+            print(f"Paths: {paths}")
 
             return paths
         except KeyError:
