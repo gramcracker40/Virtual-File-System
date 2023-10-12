@@ -24,6 +24,11 @@ class UserSchema(Schema):
     username = fields.Str()
     groups = fields.List(fields.Nested(NewGroupSchema()), dump_only=True)
 
+class DeleteUserSchema(Schema):
+    session_id = fields.Str(required=True)
+    id = fields.Int()
+    username = fields.Str()
+
 class UpdateGroupSchema(Schema):
     group_id = fields.Int()
     group_name = fields.Str()

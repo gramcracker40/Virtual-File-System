@@ -139,6 +139,7 @@ class Path(MethodView):
             path["contents"] = path["contents"].decode()
 
         return paths_list
+    
 
 
 @blp.route("/path/<int:path_id>")
