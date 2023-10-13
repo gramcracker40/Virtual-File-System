@@ -19,7 +19,6 @@ blp = Blueprint("session", "session", description="Implementing functionality fo
 # # session timeout duration. 
 session_logout_duration = time(0,30,0) # (hours, minutes, seconds)
 
-
 @blp.route("/session")
 class Session(MethodView):
 
@@ -28,6 +27,8 @@ class Session(MethodView):
         '''
         post your login info, username and password to initiate a session.
         Record the session details to make subsequent calls to the api. 
+
+        ALL Routes need a session_id passed to ensure the call is from a logged in user.
         '''
         #TODO add spam check and create lockouts after certain number of tries.
         user = UserModel.query.filter_by(username=login_data['username']).first()
