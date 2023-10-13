@@ -41,10 +41,20 @@ class NewPathSchema(Schema):
     contents = fields.Str()
 
 class UpdatePathSchema(Schema):
+    session_id = fields.Str(required=True)
+    permissions = fields.Str()
+    contents = fields.Str()
+    file_name = fields.Str()
+    path = fields.Str(required=True)
+    group_id = fields.Int()
+
+class UpdatePathIDSchema(Schema):
+    session_id = fields.Str(required=True)
     permissions = fields.Str()
     contents = fields.Str()
     file_name = fields.Str()
     pid = fields.Int()
+    group_id = fields.Int()
 
 class PathSchema(Schema):
     id = fields.Int()
@@ -57,6 +67,12 @@ class PathSchema(Schema):
     user_id = fields.Int()
     group_id = fields.Int()
     pid = fields.Int()
+
+class PathFilterSchema(Schema):
+    file_name = fields.Str()
+    file_type = fields.Str()
+    file_size = fields.Int()
+    modification_time = fields.DateTime()
 
 class UtilitySchema(Schema):
     path = fields.Str()

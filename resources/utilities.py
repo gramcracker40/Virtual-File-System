@@ -91,12 +91,6 @@ class ListDirectory(MethodView):
             abort(404, message="SessionID does not exist")
 
 
-        
-
-
-
-
-
 @blp.route("/utilities/pwd")
 class PrintWorkingDirectory(MethodView):
     '''

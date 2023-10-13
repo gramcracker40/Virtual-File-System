@@ -17,8 +17,7 @@ blp = Blueprint("path", "path", description="Implementing functionality for path
 @blp.route("/path")
 class Path(MethodView):
     """
-    TODO: check if the contents can be passed as str representations of the binary over JSON.
-            need to see if we can store multiple file formats... and actually retrieve the data.
+    functions to create paths, get all paths
     """
 
     @blp.arguments(NewPathSchema)
@@ -32,7 +31,7 @@ class Path(MethodView):
             file_name=creation_data["file_name"], file_type=creation_data["file_type"]
         )
 
-        # checks for session details
+        # checks for valid session details
         if (
             creation_data["session_id"] not in sessions
             or not sessions[creation_data["session_id"]]["active"]
@@ -48,26 +47,30 @@ class Path(MethodView):
             and creation_data["file_type"] == "directory"
         ):
             abort(400, "Cannot pass contents when creating a directory.")
+        elif "contents" in creation_data.keys() and creation_data["file_type"] == "file":
+            new_path.contents = creation_data["contents"].encode() # encoding the string into bytes object
+        elif creation_data["file_type"] == "file":  
+            new_path.contents = bytes(b'') # give it a default binary value
 
-        # if no contents, give defaults, else encode contents to bytes
-        if "contents" not in creation_data.keys():
-            new_path.contents = bytes(b"")
-        else:
-            new_path.contents = creation_data["contents"].encode()
-
-        # determine the pid of the new path being created. this function can accept a pid, path
-        # # or if they decide not to pass any of them it will use the sessions cwd.
-        print("Here 1")
+        # checking to see the parent directory of the new path.
+        #   can be determined by 'pid' or 'path'. If neither are passed
+        #   it will use the sessions cwd. can also account for root by simply being 0.
         if "pid" in creation_data.keys():
-            new_path.pid = creation_data["pid"]
+            temp = PathModel.query.filter(
+                PathModel.id == creation_data["pid"],
+            ).first_or_404(description="directory does not exist") \
+            if creation_data["pid"] != 0 else 0 # root check
+            
+            new_path.pid = temp
         elif "path" in creation_data.keys():
             id, path = confirm_path(creation_data["path"], creation_data["session_id"])
             temp = PathModel.query.get_or_404(
                 id, description="directory does not exist"
-            )
-            print("Here 2")
+            ) if id != 0 else 0 
 
-            if temp.file_type == "directory":
+            if temp == 0:  # root check
+                new_path.pid = 0
+            elif temp.file_type == "directory":
                 new_path.pid = id
             else:
                 abort(
@@ -77,32 +80,21 @@ class Path(MethodView):
         else:
             new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
         
-        print("Here 3")
-
-        # really just a check to make sure the pid set exists and is a directory
-        parent_directory = PathModel.query.get_or_404(new_path.pid, description="Could not find parent directory.").file_type \
-            if new_path.pid != 0 else "directory" 
-        
-        if parent_directory == "file":
-            abort(
-                400,
-                message="Can not create a file inside of a file. Please specify a valid directory.",
-            )
-        print("Here 4")
 
         # set file attributes not needed from user. handled by file system.
-        path_type = (
-            "d" if creation_data["file_type"] == "directory" else "-"
-        )  
+        path_type = "d" if creation_data["file_type"] == "directory" else "-"
         new_path.permissions = f"{path_type}rw-r--r--"  # default permissions
+    
         new_path.hidden = True if new_path.file_name[0] == "." else False
+    
         new_path.modification_time = datetime.now()
         new_path.file_size = sys.getsizeof(new_path.contents)
+        
         new_path.user_id = sessions[creation_data["session_id"]]["user_id"]
         new_path.group_id = sessions[creation_data["session_id"]]["groups"][0] # add their first group id only. 
 
         # check to see if file_name passed already exists in cwd.
-        # prevents duplicates in our confirm_path function.
+        # prevents duplicates in our entire file system.
         paths = PathModel.query.filter(PathModel.pid == new_path.pid)
         for each in paths:
             if each.file_name == creation_data["file_name"]:
@@ -139,12 +131,23 @@ class Path(MethodView):
             path["contents"] = path["contents"].decode()
 
         return paths_list
+    
+
+    @blp.arguments(UpdatePathSchema)
+    def patch(self, update_data):
+        '''
+        update a given path using an absolute path or relative path
+            from your sessions 'cwd' in the file system. more convenient function,
+            you do not have to specify an ID in the url to use. Simply pass a 'path'
+        '''
+
+
 
 
 @blp.route("/path/<int:path_id>")
 class PathSpecificID(MethodView):
     """
-    defined to read, update, delete specific paths.
+    defined to read, update, delete specific directories/files.
     """
 
     def delete(self, path_id):
@@ -171,12 +174,14 @@ class PathSpecificID(MethodView):
 
         for key in update_data:
             # update the attributes passed. if attribute is contents, encode the str to bytes.
-            if key != "contents":
-                setattr(path, key, update_data[key])
-            else:
+            if key == "contents":
                 setattr(path, key, update_data[key].encode())
+            elif key == "permissions":
+                test = permission_check()
+            else:
+                setattr(path, key, update_data[key])
 
-        # only place a path can be updated. modification times are accurate.
+        # only place a modification time can be updated is through an update.
         path.modification_time = datetime.now()
 
         try:
@@ -195,4 +200,18 @@ class PathSpecificID(MethodView):
         """
         get a list of paths that have the same pid (in the same directory)
         """
-        return PathModel.query.get_or_404(path_id)
+        return PathModel.query.filter(PathModel.pid == path_id)
+
+
+class PathFiltering(MethodView):
+    '''
+    The routes built to do things with paths based on filtering. 
+    '''
+
+    
+    def get(self, filter_data):
+        '''
+        Get a list of paths based on PathFilterSchema. 
+        Suported operators:
+            file_name
+        '''

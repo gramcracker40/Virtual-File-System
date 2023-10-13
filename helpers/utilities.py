@@ -42,6 +42,10 @@ def confirm_path(path:str, session_id:str) -> tuple((int, str)):
     0 and up are the pid of the given path
     '''
     try:
+        if path == "/":
+            return (0, "/")
+
+
         path_type = "abs" if path[0] == "/" else "rel"
         path_parts = path.split("/")
         path_parts = [i for i in path_parts if i != ""]
