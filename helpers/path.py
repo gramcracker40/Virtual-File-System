@@ -47,6 +47,7 @@ def valid_permissions_check(permission_string) -> bool:
     if len(permission_string) != 10:
         return False
     else:
+        path_type = permission_string[0]
         user = permission_string[1:4]
         group = permission_string[4:7]
         others = permission_string[7:10]
@@ -54,6 +55,7 @@ def valid_permissions_check(permission_string) -> bool:
         if (user in permission_map
             and group in permission_map
             and others in permission_map
+            and (path_type == 'd' or path_type == '-')
             ):
             return True
         else:
@@ -61,11 +63,22 @@ def valid_permissions_check(permission_string) -> bool:
 
 
 # Example usage:
-permission_triple = 644
-permission_rwx = f"d{convert_permission(permission_triple)}"
+permission_triple = 125
+permission_rwx = convert_permission(permission_triple)
+permission_rwx_full = f"d{permission_rwx}" if valid_permissions_check(f"d{permission_rwx}") else -1
 
 permission_string = "-rw-r--r--"
 permission_octal_result = valid_permissions_check(permission_string)
 
-print(permission_rwx)  # Output: 'rw-r--r--'
+print(permission_rwx)
+print(permission_rwx_full)  # Output: 'rw-r--r--'
 print(permission_octal_result)
+
+
+# needs for resources
+    #POST: need a check for the permissions of the sessions 
+            # logged in user to see if they are valid in the desired pid
+    #GET: need a check for session_id
+    #PATCH: update a path's attributes
+    #DELETE: need to implement a check to see the right of the user over that file or directory (path). If they
+            # do not have rights they cannot delete the file or directory (path)

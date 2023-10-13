@@ -57,6 +57,9 @@ def confirm_path(path:str, session_id:str) -> (int, str):
     '/users/bench/test' will work fine
     '''
     # initial parsing of path
+    if path == "":
+        return (-1, "invalid")
+
     path_type = "abs" if path[0] == "/" else "rel"
     path_parts = path.split("/")
     path_parts = [i for i in path_parts if i != ""]
