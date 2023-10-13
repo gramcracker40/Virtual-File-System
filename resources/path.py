@@ -140,33 +140,14 @@ class Path(MethodView):
             from your sessions 'cwd' in the file system. more convenient function,
             you do not have to specify an ID in the url to use. Simply pass a 'path'
         '''
-
-
-
-
-@blp.route("/path/<int:path_id>")
-class PathSpecificID(MethodView):
-    """
-    defined to read, update, delete specific directories/files.
-    """
-
-    def delete(self, path_id):
-        """
-        delete a path by id
-        """
-        path = PathModel.query.get_or_404(path_id)
-
-        db.session.delete(path)
-        db.session.commit()
-
-        return {"message": "path deleted successfully"}, 200
-
-    @blp.arguments(UpdatePathSchema)
-    def patch(self, update_data, path_id):
-        """
-        update a path's details by id. change permissions, content, path_location (pid), file_name
-        """
-        path = PathModel.query.get_or_404(path_id)
+        if "path" in update_data.keys():
+            id = confirm_path(update_data['path'], update_data['session_id'])[0]
+        elif "id" in update_data.keys():
+            id = update_data['keys']
+        else:
+            abort(400, message="Please pass either a 'path' or 'id' to update a Path")
+        
+        path = PathModel.query.get_or_404(id)
 
         # TODO: update session details. need last_active refresher decorator. 
         # TODO: check the user and group permissions that session has.
@@ -195,6 +176,32 @@ class PathSpecificID(MethodView):
             abort(500, message=f"Internal database error\n\n{err}")
 
         return {"Success": True}, 201
+
+
+
+@blp.route("/path/<int:path_id>")
+class PathSpecificID(MethodView):
+    """
+    defined to read, update, delete specific directories/files.
+    """
+
+    def delete(self, path_id):
+        """
+        delete a path by id
+        """
+        path = PathModel.query.get_or_404(path_id)
+
+        db.session.delete(path)
+        db.session.commit()
+
+        return {"message": "path deleted successfully"}, 200
+
+    @blp.arguments(UpdatePathSchema)
+    def patch(self, update_data, path_id):
+        """
+        update a path's details by id. change permissions, content, path_location (pid), file_name
+        """
+        
 
     @blp.response(200, PathSchema)
     def get(self, path_id):

@@ -39,7 +39,8 @@ class UpdateGroupSchema(Schema):
     group_name = fields.Str()
     user_id = fields.Int()
     username = fields.Str()
-    action = fields.Str(validate=validate.OneOf(["add", "remove"]), required=True)
+    action = fields.Str(validate=validate.OneOf(["add", "remove"]), required=True
+                        , description="Must be 'add' or 'remove'")
 
 
 class NewPathSchema(Schema):
@@ -52,19 +53,16 @@ class NewPathSchema(Schema):
 
 class UpdatePathSchema(Schema):
     session_id = fields.Str(required=True)
-    permissions = fields.Str()
+    permissions = fields.Int(description="pass the octal representation, '644'. The server will handle conversion to permission string. ")
     contents = fields.Str()
     file_name = fields.Str()
-    path = fields.Str(required=True)
+    path = fields.Str()
+    id = fields.Int()
     group_id = fields.Int()
+    user_id = fields.Int()
+    group_name = fields.Str()
+    username = fields.Str()
 
-class UpdatePathIDSchema(Schema):
-    session_id = fields.Str(required=True)
-    permissions = fields.Str()
-    contents = fields.Str()
-    file_name = fields.Str()
-    pid = fields.Int()
-    group_id = fields.Int()
 
 class PathSchema(Schema):
     id = fields.Int()

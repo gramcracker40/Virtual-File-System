@@ -67,6 +67,7 @@ class Session(MethodView):
 
         # update the activity if they've been active 
         # in the last session_logout_duration
+        to_delete = []
         for session in sessions: 
             elapsed_time = start_time - sessions[session]["last_active"]
             hours, remainder = divmod(elapsed_time.total_seconds(), 3600)
@@ -75,8 +76,11 @@ class Session(MethodView):
 
             if time_obj > session_logout_duration:
                 sessions[session]["active"] = False
-                del sessions[session]
-
+                to_delete.append(session)
+       
+        # perform removal after loop so dict does not change size
+        for each in to_delete: 
+            del sessions[each]
 
         return {"Success": True}, 200
 

@@ -29,7 +29,6 @@ def construct_path(id:int) -> str:
     return path
 
     
-# Should add a bool param to check if we should create a new dir/file if it doesn't exist
 def confirm_path(path:str, session_id:str) -> (int, str):
     '''
     returns:
@@ -55,7 +54,7 @@ def confirm_path(path:str, session_id:str) -> (int, str):
 
     absolute paths must be perfectly structured paths in the system. 
 
-
+    '/users/bench/test' will work fine
     '''
     # initial parsing of path
     path_type = "abs" if path[0] == "/" else "rel"
@@ -71,7 +70,6 @@ def confirm_path(path:str, session_id:str) -> (int, str):
             last_pid = curr_dir.pid
         else:
             curr_dir, last_id, last_pid = 0, 0, 0
-
 
         for path_ in path_parts:
             if path_ == "..":
@@ -91,7 +89,7 @@ def confirm_path(path:str, session_id:str) -> (int, str):
                     last_pid = curr_dir.pid
                     last_id = curr_dir.id
                 
-            if curr_dir == None:
+            if curr_dir == None: # only runs if query finds no matching path. 
                 return (-1, "invalid")
         
         if last_id == 0:
