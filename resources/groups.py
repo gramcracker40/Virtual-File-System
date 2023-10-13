@@ -40,16 +40,21 @@ class Groups(MethodView):
         return GroupModel.query.all()
 
     @blp.arguments(NewGroupSchema)
-    def delete(self, group):
+    def delete(self, group_data):
         '''
         delete a group given the name of the group.  
         '''
-        group = GroupModel.query.filter(GroupModel.name == group['name']).first_or_404()
+        if "name" in group_data.keys():
+            group = GroupModel.query.filter(GroupModel.name == group_data['name']).first_or_404(description="Could not find a group with the name passed")
+        elif "id" in group_data.keys():
+            group = GroupModel.query.get_or_404(group_data['id'], description="Group id does not exist")
+        else:
+            abort(400, message="Please pass a 'name' or 'id' of a valid group to delete a group.")
 
         db.session.delete(group)
         db.session.commit()
 
-        return {"message": f"group {group.name} deleted successfully"}, 200
+        return {"Success": True, "message": f"group {group.name} deleted successfully"}, 200
     
     @blp.arguments(UpdateGroupSchema)
     def patch(self, update_data):

@@ -19,10 +19,20 @@ class GroupSchema(Schema):
     name = fields.Str(required=True)
     users = fields.List(fields.Nested(NewUserSchema()), dump_only=True)
 
+class DeleteGroupSchema(Schema):
+    session_id = fields.Str()
+    name = fields.Str()
+    id = fields.Int()
+
 class UserSchema(Schema):
     id = fields.Int()
     username = fields.Str()
     groups = fields.List(fields.Nested(NewGroupSchema()), dump_only=True)
+
+class DeleteUserSchema(Schema):
+    session_id = fields.Str(required=True)
+    id = fields.Int()
+    username = fields.Str()
 
 class UpdateGroupSchema(Schema):
     group_id = fields.Int()

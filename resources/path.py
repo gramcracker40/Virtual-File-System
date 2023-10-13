@@ -177,7 +177,8 @@ class PathSpecificID(MethodView):
             if key == "contents":
                 setattr(path, key, update_data[key].encode())
             elif key == "permissions":
-                test = permission_check()
+                #test = permission_check()
+                pass
             else:
                 setattr(path, key, update_data[key])
 
