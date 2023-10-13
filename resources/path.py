@@ -83,7 +83,7 @@ class Path(MethodView):
 
         # set file attributes not needed from user. handled by file system.
         path_type = "d" if creation_data["file_type"] == "directory" else "-"
-        new_path.permissions = f"{path_type}rw-r--r--"  # default permissions
+        new_path.permissions = f"{path_type}rwxr--r--"  # default permissions
     
         new_path.hidden = True if new_path.file_name[0] == "." else False
     
