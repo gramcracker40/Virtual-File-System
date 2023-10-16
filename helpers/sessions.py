@@ -17,8 +17,14 @@ def session_id_check(session_id) -> bool:
     returns true if the session is valid
     returns false if the session is invalid
     '''
-    return session_id in sessions or \
-        sessions[session_id]["active"]
+    try:
+        return session_id in sessions or \
+            sessions[session_id]["active"]
+    except KeyError:
+        return False
+
 
 def update_session_activity(session_id):
-    6
+    '''
+    update the sessions last known activity. 
+    '''

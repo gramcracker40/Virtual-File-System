@@ -22,11 +22,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 # Internal
 from db import db
 from helpers.sessions import session_timer_check
+from initialize_defaults import build_initial_structure
 from resources.path import blp as PathBlueprint
 from resources.users import blp as UserBlueprint
 from resources.groups import blp as GroupBlueprint
 from resources.session import blp as SessionBlueprint
 from resources.utilities import blp as UtilityBlueprint
+from models import GroupModel, UserModel
 
 # Environment variables
 from dotenv import dotenv_values
@@ -62,6 +64,7 @@ def app():
     app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
     app.config["SQLALCHEMY_DATABASE_URI"] = db_uri or "sqlite:///data.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["JWT_SECRET_KEY"] = "biudsbgfasoYVUVFEUfdziofbGVUut1273924bakjfbrwrggfsdh45"
     db.init_app(app)
     
     migrate = Migrate(app, db)
@@ -69,6 +72,14 @@ def app():
    
     with app.app_context():
         db.create_all()
+
+        # test for defaults. 
+        default = GroupModel.query.filter(GroupModel.name == "default").first()
+        root = UserModel.query.filter(UserModel.username == "root").first()
+        if default == None and root == None:
+            build_initial_structure()
+    
+    
 
     api.register_blueprint(PathBlueprint)
     api.register_blueprint(UserBlueprint)

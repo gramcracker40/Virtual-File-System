@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime, date, time
 
 from models import PathModel, UserModel
-from schemas import NewUserSchema, SessionDeleteSchema
+from schemas import NewSessionSchema, SessionDeleteSchema
 from session_handler import sessions
 from helpers.sessions import rand_string
 
@@ -22,7 +22,7 @@ session_logout_duration = time(0,30,0) # (hours, minutes, seconds)
 @blp.route("/session")
 class Session(MethodView):
 
-    @blp.arguments(NewUserSchema)
+    @blp.arguments(NewSessionSchema)
     def post(self, login_data):
         '''
         post your login info, username and password to initiate a session.

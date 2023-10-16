@@ -1,16 +1,16 @@
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
 from db import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from datetime import datetime
 
-from models import UserModel, GroupModel
+from models import UserModel, GroupModel, PathModel
 from schemas import NewUserSchema, UserSchema, DeleteUserSchema
 from session_handler import sessions
+from helpers.sessions import session_id_check
 
 blp = Blueprint("users", "users", description="Implementing functionality for users")
-
 
 @blp.route("/users")
 class Users(MethodView):
@@ -18,8 +18,15 @@ class Users(MethodView):
     @blp.arguments(NewUserSchema)
     def post(self, user_data):
         '''
-        creates a new user
+        creates a new user, automatically creates a directory with their username in "users"
         '''
+        if not session_id_check(user_data["session_id"]):
+            abort(409, message="Session ID provided does not exist or is not active, login again...")
+
+        # 2 will always be the id of the admin group. 
+        if 2 not in sessions[user_data["session_id"]]["groups"]:
+            abort(400, message="You must be the in the admin group to create new users.")
+
         if UserModel.query.filter(UserModel.username == user_data["username"]).first():
             abort(409, message="A user with that username already exists")
            
@@ -33,6 +40,23 @@ class Users(MethodView):
             user.groups.append(default_group)
 
             db.session.add(user)
+            db.session.commit()
+
+            newly_made_user = UserModel.query.filter(UserModel.username == user_data['username']).first()
+
+            users_folder = PathModel(
+                file_name=user_data["username"],
+                file_type="directory",
+                permissions="drwx------", 
+                user_id=newly_made_user.id, 
+                group_id=1, 
+                file_size=0, 
+                modification_time=datetime.now(), 
+                pid=1, # 1 is the users directory always. 
+                hidden=False
+            )
+
+            db.session.add(users_folder)
             db.session.commit()
         except IntegrityError as err:
             #duplicate = str(err.orig).split('"')[1]
@@ -82,20 +106,6 @@ class Users(MethodView):
 
         except SQLAlchemyError as err:
             abort(500, message=f"Internal server error --> {err}")
-
-
-
-@blp.route("/users/<int:user_id>")
-class UserSpecific(MethodView):
-    '''
-    perform operations on a given user
-    '''
-    @blp.response(200, UserSchema)
-    def get(self, user_id):
-        '''
-        get a users info by id
-        '''
-        return UserModel.query.get_or_404(user_id)
 
 
 

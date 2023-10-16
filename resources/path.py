@@ -12,7 +12,7 @@ from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, construct_path
 from helpers.sessions import session_id_check
-from helpers.path import valid_permissions_check, octal_to_permission_string
+from helpers.path import valid_permission_octal_check, octal_to_permission_string, permissions_check
 
 # path routes object
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
@@ -31,7 +31,7 @@ class Path(MethodView):
         if "path" in data.keys():
             id = confirm_path(data['path'], data['session_id'])[0]
         elif "id" in data.keys():
-            id = data['keys']
+            id = data['id']
         else:
             abort(400, message="Please pass either a valid 'path' or 'id'")
         
@@ -80,6 +80,14 @@ class Path(MethodView):
         else:
             new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
 
+        # checking the sessions permission in the parent directory. if they have 'w' they will be able to create a Path
+        new_path_dir = PathModel.query.get_or_404(new_path.pid, description=f"Could not find parent directory for creation") \
+                    if new_path.pid != 0 else 0
+        has_permission = permissions_check(creation_data['session_id'], new_path_dir, permission_needed="w")
+        
+        if not has_permission:
+            abort(400, message=f"session user does not have the correct permissions in directory '{new_path_dir.file_name}'")
+        
         # check to see if file_name passed already exists in cwd.
         # prevents duplicates in the entire file system.
         paths = PathModel.query.filter(PathModel.pid == new_path.pid)
@@ -145,7 +153,6 @@ class Path(MethodView):
 
         # perform permission_check on the read permissions for current session on path
 
-
         return path, 200
 
     
@@ -170,7 +177,7 @@ class Path(MethodView):
                 setattr(path, key, update_data[key].encode())
             elif key == "permissions": # check if the user is the owner. 
                 permission_rwx = octal_to_permission_string(update_data["permissions"])\
-                    if valid_permissions_check(update_data["permissions"]) else None
+                    if valid_permission_octal_check(update_data["permissions"]) else None
                 temp_type = "d" if path.file_type == "directory" else "-"
                 
                 if permission_rwx != None:

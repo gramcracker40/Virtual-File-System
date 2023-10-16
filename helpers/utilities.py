@@ -80,7 +80,7 @@ def confirm_path(path:str, session_id:str) -> (int, str):
                     curr_dir = PathModel.query.filter(PathModel.id == last_pid).first()
                     last_id = curr_dir.id
                     last_pid = curr_dir.pid
-                elif last_pid == 0 or last_pid == -1:
+                else:
                     last_pid = -1
                     last_id = 0
                 
@@ -127,18 +127,21 @@ def confirm_path_by_id(id:int = None, session_id:str = None) -> (int, str):
 
 def change_directory(path:str = None, session_id:str = None) -> str:
     id,path = confirm_path(path, session_id)
-
+    
     if id == -1:
         return "Directory does not exist."
-    
-    model = PathModel.query.filter(PathModel.id == id).first_or_404(description="Path not found")
+        
+    model = PathModel.query.filter(PathModel.id == id).first_or_404(description="Path not found") \
+        if id != 0 else 0
 
-    if model.file_type == "file":
-        return "cd: " + model.file_name +  ": Not a directory"
-    
+    if model == 0:
+        sessions[session_id]["cwd_id"] = id
+        return f"/"
+    elif model.file_type == "file":
+        return model.file_name +  " is not a directory..."
+
     sessions[session_id]["cwd_id"] = id
-    new_dir_path = construct_path(id)
-    return new_dir_path
+    return construct_path(id)
 
 def print_working_directory(session_id:str = None) -> str:
     cwd_id = sessions[session_id]["cwd_id"]

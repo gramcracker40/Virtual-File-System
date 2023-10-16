@@ -7,11 +7,17 @@ class BytesField(fields.Field):
 
         if value is None or value == b'':
             raise ValidationError('Invalid value')
+        
+class NewSessionSchema(Schema):
+    username = fields.Str(required=True)
+    password = fields.Str(required=True, load_only=True)
 
 class NewGroupSchema(Schema):
+    session_id = fields.Str(required=True)
     name = fields.Str(required=True)
 
 class NewUserSchema(Schema):
+    session_id = fields.Str(required=True)
     username = fields.Str(required=True)
     password = fields.Str(required=True, load_only=True)
 
@@ -22,7 +28,6 @@ class GroupSchema(Schema):
 class DeleteGroupSchema(Schema):
     session_id = fields.Str()
     name = fields.Str()
-    id = fields.Int()
 
 class UserSchema(Schema):
     id = fields.Int()
@@ -35,6 +40,7 @@ class DeleteUserSchema(Schema):
     username = fields.Str()
 
 class UpdateGroupSchema(Schema):
+    session_id = fields.Str(required=True)
     group_id = fields.Int()
     group_name = fields.Str()
     user_id = fields.Int()
@@ -85,6 +91,7 @@ class PathSchema(Schema):
     pid = fields.Int()
 
 class PathFilterSchema(Schema):
+    session_id = fields.Str(required=True)
     file_name = fields.Str()
     file_type = fields.Str()
     file_size = fields.Int()

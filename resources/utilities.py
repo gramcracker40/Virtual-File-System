@@ -4,19 +4,15 @@ Define all utility functions in this file.
 examples: 'change_directory', 'long_listing', etc 
 
 '''
-import sys
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from datetime import datetime
 
 # internal
 from models import PathModel
 from schemas import UtilitySchema, PathSchema
 from session_handler import sessions
 from db import db
-from errors import InsufficientParamaters
-from helpers.utilities import confirm_path, confirm_path_by_id, construct_path, change_directory, print_working_directory
+from helpers.utilities import confirm_path, change_directory, print_working_directory
 
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
@@ -65,7 +61,6 @@ class ListDirectory(MethodView):
             else:
                 cwd_id = confirm_path(ls_params['path'], ls_params['session_id'])[0]
             
-            print(f"listing directory id: {cwd_id}")
 
             path = PathModel.query.get_or_404(cwd_id) if cwd_id != 0 else 0
             
@@ -76,15 +71,11 @@ class ListDirectory(MethodView):
             elif path.file_type == "file":
                 search_id = path.pid
 
-            print(f"SearchID: {search_id}")
-
             all_paths = PathModel.query.filter(PathModel.pid == search_id)
             
             paths = [path.__dict__ for path in all_paths]
             for each in paths:
                 del each['contents'], each['_sa_instance_state']
-
-            print(f"Paths: {paths}")
 
             return paths
         except KeyError:
