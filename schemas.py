@@ -42,7 +42,6 @@ class UpdateGroupSchema(Schema):
     action = fields.Str(validate=validate.OneOf(["add", "remove"]), required=True
                         , description="Must be 'add' or 'remove'")
 
-
 class NewPathSchema(Schema):
     file_name = fields.Str(required=True)
     file_type = fields.Str(validate=validate.OneOf(["file", "directory"]), required=True)
@@ -62,7 +61,6 @@ class UpdatePathSchema(Schema):
     user_id = fields.Int()
     group_name = fields.Str()
     username = fields.Str()
-
 
 class PathSchema(Schema):
     id = fields.Int()

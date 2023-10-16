@@ -10,7 +10,7 @@ from schemas import NewPathSchema, PathSchema, UpdatePathSchema
 from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path
-from helpers.path import valid_permissions_check, convert_permission
+from helpers.path import valid_permissions_check, octal_to_permission_string
 
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
 
@@ -80,7 +80,9 @@ class Path(MethodView):
                 )
         else:
             new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
-        
+
+        parent_directory = PathModel.query.filter(PathModel.id == new_path.pid)
+        # add permissions check, need 'w' permissions in the parent directory.         
 
         # set file attributes not needed from user. handled by file system.
         path_type = "d" if creation_data["file_type"] == "directory" else "-"
@@ -170,11 +172,12 @@ class Path(MethodView):
             if key == "contents":
                 setattr(path, key, update_data[key].encode())
             elif key == "permissions":
-                permission_rwx = convert_permission(update_data["permissions"])
+                permission_rwx = octal_to_permission_string(update_data["permissions"])\
+                    if valid_permissions_check(update_data["permissions"]) else None
                 temp_type = "d" if path.file_type == "directory" else "-"
-
-                if valid_permissions_check(f"{temp_type}{permission_rwx}"):
-                    permission_rwx_full = f"d{permission_rwx}"
+                
+                if permission_rwx != None:
+                    permission_rwx_full = f"{temp_type}{permission_rwx}"
                     setattr(path, key, permission_rwx_full)
                 else:
                     abort(400, message=f"invalid permissions --> {update_data['permissions']}")
