@@ -131,6 +131,11 @@ def change_directory(path:str = None, session_id:str = None) -> str:
     if id == -1:
         return "Directory does not exist."
     
+    model = PathModel.query.filter(PathModel.id == id).first_or_404(description="Path not found")
+
+    if model.file_type == "file":
+        return "cd: " + model.file_name +  ": Not a directory"
+    
     sessions[session_id]["cwd_id"] = id
     new_dir_path = construct_path(id)
     return new_dir_path

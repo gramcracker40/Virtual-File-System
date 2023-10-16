@@ -129,7 +129,8 @@ class Path(MethodView):
 
         # must decode contents to send over using json.
         for path in paths_list:
-            path["contents"] = path["contents"].decode()
+            if path["contents"] != None:
+                path["contents"] = path["contents"].decode()
 
         return paths_list
     
