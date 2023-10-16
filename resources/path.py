@@ -11,13 +11,14 @@ from schemas import NewPathSchema, PathSchema, UpdatePathSchema, DeletePathSchem
 from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, construct_path
-from helpers.sessions import session_id_check
+from helpers.sessions import session_id_check, update_session_activity
+
 from helpers.path import valid_permission_octal_check, octal_to_permission_string, permissions_check, owner_check
 
 # path routes object
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
 
-default_permissions = "rwxr-x--x"
+default_permissions = "rwx------"
 
 @blp.route("/path")
 class Path(MethodView):
@@ -133,6 +134,8 @@ class Path(MethodView):
         except SQLAlchemyError as err:
             abort(500, message=f"Internal database error\n\n{err}")
 
+        update_session_activity(creation_data["session_id"])
+
         return {
             "Success": True,
             "message": f"Path name - {new_path.file_name} created in '{construct_path(new_path.pid)}'",
@@ -160,6 +163,8 @@ class Path(MethodView):
         if not has_permission:
             abort(400, message=f"session user does not have the correct permissions in Path: '{path.file_name}'")
 
+        update_session_activity(path_data["session_id"])
+
         return path, 200
 
     
@@ -177,7 +182,6 @@ class Path(MethodView):
         id = Path.id_check(update_data)
         path = PathModel.query.get_or_404(id)
         owner = owner_check(update_data["session_id"], path)
-
 
         # runs through each key passed to update the given path with. performs permission checks at each key
         # making sure that the calling sessions has the appropriate rights for that action. 
@@ -239,6 +243,7 @@ class Path(MethodView):
 
         # only place a modification time can be updated is through an update.
         path.modification_time = datetime.now()
+        update_session_activity(update_data["session_id"])
 
         try:
             db.session.commit()
@@ -265,6 +270,13 @@ class Path(MethodView):
         id = Path.id_check(delete_data)        
         path = PathModel.query.get_or_404(id)
         path_str = construct_path(id)
+        owner = owner_check(delete_data["session_id"], path)
+
+        # permissions check
+        if not owner and 2 not in sessions[delete_data["session_id"]]["groups"]:
+            abort(400, message="Only the owner of the Path and admins can delete a Path")
+
+        update_session_activity(delete_data["session_id"])
 
         # need to add recursive function to delete everything beneath it if it is a directory. 
         # will leave stranded paths. 
@@ -272,30 +284,3 @@ class Path(MethodView):
         db.session.commit()
 
         return {"Success": True, "message": f"successfully deleted '{path_str}'"}, 200
-        
-
-
-
-class PathFiltering(MethodView):
-    '''
-    The routes built to do things with paths based on filtering. 
-    '''
-
-    
-    def get(self, filter_data):
-        '''
-        Get a list of paths based on PathFilterSchema. 
-        Suported operators:
-            file_name
-        '''
-
-
-# paths = PathModel.query.all()
-# paths_list = [path.__dict__ for path in paths]
-
-# # must decode contents to send over using json.
-# for path in paths_list:
-#     if path["contents"] != None:
-#         path["contents"] = path["contents"].decode()
-
-# return paths_list

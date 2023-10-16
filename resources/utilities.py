@@ -13,6 +13,8 @@ from schemas import UtilitySchema, PathSchema
 from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, change_directory, print_working_directory
+from helpers.sessions import update_session_activity
+from helpers.path import permissions_check
 
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
@@ -32,6 +34,8 @@ class ChangeDirectory(MethodView):
             new_dir_path = change_directory(path=cd_params["path"], session_id=cd_params["session_id"])
         except KeyError as err:
             abort(400, message="SessionID does not exist...")
+
+        update_session_activity(cd_params['session_id'])
 
         return {"new_path": new_dir_path}, 200
 
@@ -59,21 +63,26 @@ class ListDirectory(MethodView):
             else:
                 cwd_id = confirm_path(ls_params['path'], ls_params['session_id'])[0]
             
-
             path = PathModel.query.get_or_404(cwd_id) if cwd_id != 0 else 0
             
             if path == 0:
                 search_id = 0
+
             elif path.file_type == "directory":
                 search_id = path.id
             elif path.file_type == "file":
-                search_id = path.pid
+                abort(400, message="Can not list the files associated with a file. Please specify a directory")
+
+            if not permissions_check(ls_params['session_id'], path, permission_needed="r"):
+                abort(400, message="the session user does not have read permissions on the desired directory ")
 
             all_paths = PathModel.query.filter(PathModel.pid == search_id)
             
             paths = [path.__dict__ for path in all_paths]
             for each in paths:
                 del each['contents'], each['_sa_instance_state']
+
+            update_session_activity(ls_params['session_id'])
 
             return paths
         except KeyError:
@@ -93,5 +102,7 @@ class PrintWorkingDirectory(MethodView):
         cwd_path = print_working_directory(pwd_params["session_id"]) \
             if pwd_params["session_id"] in sessions \
             else abort(400, message="SessionID is invalid")
+        
+        update_session_activity(pwd_params['session_id'])
 
         return {"cwd": cwd_path}, 200

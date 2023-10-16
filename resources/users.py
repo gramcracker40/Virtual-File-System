@@ -8,7 +8,7 @@ from datetime import datetime
 from models import UserModel, GroupModel, PathModel
 from schemas import NewUserSchema, UserSchema, DeleteUserSchema
 from session_handler import sessions
-from helpers.sessions import session_id_check
+from helpers.sessions import session_id_check, update_session_activity
 
 blp = Blueprint("users", "users", description="Implementing functionality for users")
 
@@ -67,6 +67,8 @@ class Users(MethodView):
 
         new_user = UserModel.query.filter(UserModel.username == user_data["username"]).first()
         
+        update_session_activity(user_data["session_id"])
+        
         return {"message": "User created successfully", "user_id": new_user.id}, 201
 
     @blp.response(200, UserSchema(many=True))
@@ -102,6 +104,8 @@ class Users(MethodView):
             db.session.delete(user)
             db.session.commit()
 
+            update_session_activity(user_data["session_id"])
+            
             return {"Success": True}, 200
 
         except SQLAlchemyError as err:

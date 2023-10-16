@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from models import GroupModel, UserModel, UsersGroupsModel
 from schemas import NewGroupSchema, UpdateGroupSchema, GroupSchema, DeleteGroupSchema
-from helpers.sessions import session_id_check
+from helpers.sessions import session_id_check, update_session_activity
 from session_handler import sessions
 
 blp = Blueprint("groups", "groups", description="Implementing functionality for groups")
@@ -32,6 +32,8 @@ class Groups(MethodView):
             db.session.add(new_group)
             db.session.add(user)
             db.session.commit()
+
+            update_session_activity(group_data["session_id"])
         except IntegrityError as err:
             #duplicate = str(err.orig).split('"')[1]
             abort(409, message=f"Group with name - '{new_group.name}' - already exists")
@@ -70,6 +72,7 @@ class Groups(MethodView):
 
         db.session.delete(group)
         db.session.commit()
+        update_session_activity(group_data["session_id"])
 
         return {"Success": True, "message": f"group {group.name} deleted successfully"}, 200
     
@@ -115,5 +118,7 @@ class Groups(MethodView):
         db.session.add(group)
         db.session.add(user)
         db.session.commit()
+        update_session_activity(update_data["session_id"])
+
 
         return {"Success":True}, 201

@@ -62,9 +62,6 @@ class Session(MethodView):
         '''
         start_time = datetime.now()
 
-        #TODO: check the private key that only the background task should have access to.
-        #TODO: add private key generation to beginning and place as arg in background task. 
-
         # update the activity if they've been active 
         # in the last session_logout_duration
         to_delete = []

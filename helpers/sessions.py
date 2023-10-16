@@ -1,5 +1,6 @@
 import requests, random, string
 from session_handler import sessions
+from datetime import datetime
 
 def session_timer_check():
     """
@@ -27,4 +28,8 @@ def session_id_check(session_id) -> bool:
 def update_session_activity(session_id):
     '''
     update the sessions last known activity. 
+    ensure the sessions validity has been checked before using this function
     '''
+    sessions[session_id]["last_active"] = datetime.now()
+
+    
