@@ -70,7 +70,8 @@ class Users(MethodView):
             if "id" in user_data.keys():
                 user = UserModel.query.get_or_404(user_data["id"], description="User ID not found")
             elif "username" in user_data.keys():
-                user = UserModel.query.filter(UserModel.username == user_data["username"]).first_or_404(description="username not found")
+                user = UserModel.query.filter(UserModel.username == user_data["username"])\
+                    .first_or_404(description="username not found")
             else:
                 abort(400, message="Please pass a valid user id or username")
             

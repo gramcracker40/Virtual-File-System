@@ -158,7 +158,6 @@ class Path(MethodView):
         # TODO: check the user and group permissions that session has. if neither meet standards, check other
         # permission_check
 
-
         for key in update_data:
             if key == "contents":
                 setattr(path, key, update_data[key].encode())
@@ -216,33 +215,26 @@ class Path(MethodView):
             the id of the path. must have session_id included in request 
             to ensure the permission of the calling session to perform the action
         '''
+        # checks for valid session details
+        if not session_id_check(delete_data["session_id"]):
+            abort(409, message="Session ID provided does not exist or is not active, login again...")
 
-
-
-@blp.route("/path/<int:path_id>")
-class PathSpecificID(MethodView):
-    """
-    defined to read, update, delete specific directories/files.
-    """
-
-    def delete(self, path_id):
-        """
-        delete a path by id
-        """
-        path = PathModel.query.get_or_404(path_id)
+        # grab the id of the path we are deleting
+        if "path" in delete_data.keys():
+            id = confirm_path(delete_data['path'], delete_data['session_id'])[0]
+        elif "id" in delete_data.keys():
+            id = delete_data['keys']
+        else:
+            abort(400, message="Please pass either a 'path' or 'id' to update a specific Path")
+        
+        path = PathModel.query.get_or_404(id)
 
         db.session.delete(path)
         db.session.commit()
 
-        return {"message": "path deleted successfully"}, 200
+        return {"Success": True}, 200
         
 
-    @blp.response(200, PathSchema)
-    def get(self, path_id):
-        """
-        get a list of paths that have the same pid (in the same directory)
-        """
-        return PathModel.query.filter(PathModel.pid == path_id)
 
 
 class PathFiltering(MethodView):

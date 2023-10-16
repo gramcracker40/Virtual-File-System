@@ -62,6 +62,11 @@ class UpdatePathSchema(Schema):
     group_name = fields.Str()
     username = fields.Str()
 
+class DeletePathSchema(Schema):
+    path = fields.Str()
+    id = fields.Int()
+    session_id = fields.Str(required=True)
+
 class PathSchema(Schema):
     id = fields.Int()
     file_name = fields.Str()
