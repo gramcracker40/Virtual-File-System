@@ -16,7 +16,6 @@ from helpers.utilities import confirm_path, change_directory, print_working_dire
 
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
-
 @blp.route("/utilities/cd")
 class ChangeDirectory(MethodView):
     '''
@@ -33,7 +32,6 @@ class ChangeDirectory(MethodView):
             new_dir_path = change_directory(path=cd_params["path"], session_id=cd_params["session_id"])
         except KeyError as err:
             abort(400, message="SessionID does not exist...")
-
 
         return {"new_path": new_dir_path}, 200
 
@@ -97,4 +95,3 @@ class PrintWorkingDirectory(MethodView):
             else abort(400, message="SessionID is invalid")
 
         return {"cwd": cwd_path}, 200
-    

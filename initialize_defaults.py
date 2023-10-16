@@ -28,6 +28,7 @@ def build_initial_structure():
     db.session.add(admin_group)
     db.session.commit()
     
+    # where all user data is stored based on username. 
     users_folder = PathModel(
         file_name="users",
         file_type="directory",

@@ -3,6 +3,7 @@ from flask_smorest import abort
 from session_handler import sessions
 from errors import InsufficientParamaters
 import requests, json
+from helpers.path import permissions_check
 
 def construct_path(id:int) -> str:
     path = ""
@@ -135,10 +136,16 @@ def change_directory(path:str = None, session_id:str = None) -> str:
         if id != 0 else 0
 
     if model == 0:
-        sessions[session_id]["cwd_id"] = id
-        return f"/"
+        if 2 in sessions[session_id]["groups"]:
+            sessions[session_id]["cwd_id"] = id 
+            return f"/"
+        else:
+            return f"Non admin users can not change into root."
     elif model.file_type == "file":
         return model.file_name +  " is not a directory..."
+
+    if not permissions_check(session_id, model, permission_needed="x"):
+        return f"the logged in session does not have the necessary rights to change into this directory"
 
     sessions[session_id]["cwd_id"] = id
     return construct_path(id)

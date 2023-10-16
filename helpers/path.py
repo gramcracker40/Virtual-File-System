@@ -122,6 +122,12 @@ def permissions_check(session_id:str, path:PathModel, permission_needed:str="r")
     return True
 
 
+def owner_check(session_id:str, path:PathModel):
+    return True if sessions[session_id]["user_id"]\
+        == path.user_id else False
+
+
+
 
 # Example usage:
 # permission_triple = 125

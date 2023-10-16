@@ -12,7 +12,7 @@ from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, construct_path
 from helpers.sessions import session_id_check
-from helpers.path import valid_permission_octal_check, octal_to_permission_string, permissions_check
+from helpers.path import valid_permission_octal_check, octal_to_permission_string, permissions_check, owner_check
 
 # path routes object
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
@@ -80,7 +80,7 @@ class Path(MethodView):
         else:
             new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
 
-        # checking the sessions permission in the parent directory. if they have 'w' they will be able to create a Path
+        # checking the sessions permission in the parent directory. if they have write permissions they will be able to create a Path in the directory. 
         new_path_dir = PathModel.query.get_or_404(new_path.pid, description=f"Could not find parent directory for creation") \
                     if new_path.pid != 0 else 0
         has_permission = permissions_check(creation_data['session_id'], new_path_dir, permission_needed="w")
@@ -149,9 +149,16 @@ class Path(MethodView):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
 
         id = Path.id_check(path_data)
+
+        if id == 0: 
+            abort(400, message="root is not a file or directory")
+
         path = PathModel.query.get_or_404(id)
 
-        # perform permission_check on the read permissions for current session on path
+        # checking the sessions permission in the desired path.  
+        has_permission = permissions_check(path_data['session_id'], path, permission_needed="r")
+        if not has_permission:
+            abort(400, message=f"session user does not have the correct permissions in Path: '{path.file_name}'")
 
         return path, 200
 
@@ -159,7 +166,8 @@ class Path(MethodView):
     @blp.arguments(UpdatePathSchema)
     def patch(self, update_data):
         '''
-        update a given path, can pass a 'path' to update or simply the 'id' of the Path
+        update a given path, can pass a 'path' to update or simply the 'id' of the Path. Will automatically change the
+            modification_time of the path. 
         '''
 
         # checks for valid session details
@@ -168,17 +176,30 @@ class Path(MethodView):
 
         id = Path.id_check(update_data)
         path = PathModel.query.get_or_404(id)
+        owner = owner_check(update_data["session_id"], path)
 
-        # TODO: check the user and group permissions that session has. if neither meet standards, check other
-        # permission_check
 
+        # runs through each key passed to update the given path with. performs permission checks at each key
+        # making sure that the calling sessions has the appropriate rights for that action. 
         for key in update_data:
             if key == "contents":
-                setattr(path, key, update_data[key].encode())
-            elif key == "permissions": # check if the user is the owner. 
+                # need 'w' permissions to update the contents of a file. 
+                has_permission = permissions_check(update_data['session_id'], path, permission_needed="w")
+                if not has_permission:
+                    abort(400, message=f"session user does not have the correct permissions in Path: '{path.file_name}'\nneed 'w' permissions. ")
+                
+                if path.file_type != "directory":
+                    setattr(path, key, update_data[key].encode())
+                else:
+                    abort(400, message="You can not set contents on a directory. ")
+            elif key == "permissions":
                 permission_rwx = octal_to_permission_string(update_data["permissions"])\
                     if valid_permission_octal_check(update_data["permissions"]) else None
                 temp_type = "d" if path.file_type == "directory" else "-"
+
+                # permissions_check to ensure the calling session has rights to change permissions on Path. 
+                if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
+                    abort(400, message="Only the owner of the Path and admins can update the permissions of a path.")
                 
                 if permission_rwx != None:
                     permission_rwx_full = f"{temp_type}{permission_rwx}"
@@ -189,21 +210,29 @@ class Path(MethodView):
             elif key == "group_id":
                 group = GroupModel.query.get_or_404(update_data[key], 
                             description=f"Group with 'group_id':{update_data[key]} does not exist")
+                if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
+                    abort(400, message="Only the owner of the Path and admins can update the group_id of a Path.")
                 setattr(path, key, group.id)             
             
             elif key == "group_name":
                 group = GroupModel.query.filter(GroupModel.name == update_data['group_name']).first_or_404(
                     description = f"Group with 'name':{update_data[key]} does not exist")
+                if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
+                    abort(400, message="Only the owner of the Path and admins can update the group_id of a Path.")
                 setattr(path, "group_id", group.id)
         
             elif key == "user_id":
                 user = UserModel.query.get_or_404(update_data[key], 
                             description=f"User with 'user_id':{update_data[key]} does not exist")
+                if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
+                    abort(400, message="Only the owner of the Path and admins can update the user_id of a Path.")
                 setattr(path, key, user.id)   
 
             elif key == "username":
                 user = UserModel.query.filter(UserModel.username == update_data[key]).first_or_404(
                     description = f"User with 'username':{update_data[key]} does not exist")
+                if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
+                    abort(400, message="Only the owner of the Path and admins can update the user_id of a Path.")
                 setattr(path, "user_id", user.id)
             else:
                 setattr(path, key, update_data[key])
