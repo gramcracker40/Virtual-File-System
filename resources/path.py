@@ -7,7 +7,7 @@ from datetime import datetime
 
 # internal
 from models import PathModel, UserModel, GroupModel
-from schemas import NewPathSchema, PathSchema, UpdatePathSchema
+from schemas import NewPathSchema, PathSchema, UpdatePathSchema, DeletePathSchema, GetPathSchema
 from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, construct_path
@@ -25,6 +25,17 @@ class Path(MethodView):
     functions to create, read, update, delete paths using a variety of parameters
         that are clearly defined in the schemas for each route
     """
+    @classmethod
+    def id_check(self, data):
+        # grab the id of the path we are working with
+        if "path" in data.keys():
+            id = confirm_path(data['path'], data['session_id'])[0]
+        elif "id" in data.keys():
+            id = data['keys']
+        else:
+            abort(400, message="Please pass either a valid 'path' or 'id'")
+        
+        return id
 
     @blp.arguments(NewPathSchema)
     def post(self, creation_data):
@@ -118,23 +129,26 @@ class Path(MethodView):
             "Success": True,
             "message": f"Path name - {new_path.file_name} created in '{construct_path(new_path.pid)}'",
         }, 201
-
-    @blp.response(200, PathSchema(many=True))
-    def get(self):
-        """
-        get all paths in file system
-        """
-        paths = PathModel.query.all()
-        paths_list = [path.__dict__ for path in paths]
-
-        # must decode contents to send over using json.
-        for path in paths_list:
-            if path["contents"] != None:
-                path["contents"] = path["contents"].decode()
-
-        return paths_list
     
+    @blp.arguments(GetPathSchema)
+    @blp.response(200, PathSchema())
+    def get(self, path_data):
+        """
+        get a specific path and its contents in the file system. only use when trying to get
+            the contents of a file. Must have appropriate permissions on the file. 
+        """
+        if not session_id_check(path_data["session_id"]):
+            abort(409, message="Session ID provided does not exist or is not active, login again...")
 
+        id = Path.id_check(path_data)
+        path = PathModel.query.get_or_404(id)
+
+        # perform permission_check on the read permissions for current session on path
+
+
+        return path, 200
+
+    
     @blp.arguments(UpdatePathSchema)
     def patch(self, update_data):
         '''
@@ -145,14 +159,7 @@ class Path(MethodView):
         if not session_id_check(update_data["session_id"]):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
 
-        # grab the id of the path we are working with
-        if "path" in update_data.keys():
-            id = confirm_path(update_data['path'], update_data['session_id'])[0]
-        elif "id" in update_data.keys():
-            id = update_data['keys']
-        else:
-            abort(400, message="Please pass either a 'path' or 'id' to update a specific Path")
-        
+        id = Path.id_check(update_data)
         path = PathModel.query.get_or_404(id)
 
         # TODO: check the user and group permissions that session has. if neither meet standards, check other
@@ -161,7 +168,7 @@ class Path(MethodView):
         for key in update_data:
             if key == "contents":
                 setattr(path, key, update_data[key].encode())
-            elif key == "permissions":
+            elif key == "permissions": # check if the user is the owner. 
                 permission_rwx = octal_to_permission_string(update_data["permissions"])\
                     if valid_permissions_check(update_data["permissions"]) else None
                 temp_type = "d" if path.file_type == "directory" else "-"
@@ -208,7 +215,7 @@ class Path(MethodView):
 
         return {"Success": True}, 201
 
-    
+    @blp.arguments(DeletePathSchema)
     def delete(self, delete_data):
         '''
         delete a path, pass a valid absolute or relative path or simply
@@ -219,20 +226,16 @@ class Path(MethodView):
         if not session_id_check(delete_data["session_id"]):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
 
-        # grab the id of the path we are deleting
-        if "path" in delete_data.keys():
-            id = confirm_path(delete_data['path'], delete_data['session_id'])[0]
-        elif "id" in delete_data.keys():
-            id = delete_data['keys']
-        else:
-            abort(400, message="Please pass either a 'path' or 'id' to update a specific Path")
-        
+        id = Path.id_check(delete_data)        
         path = PathModel.query.get_or_404(id)
+        path_str = construct_path(id)
 
+        # need to add recursive function to delete everything beneath it if it is a directory. 
+        # will leave stranded paths. 
         db.session.delete(path)
         db.session.commit()
 
-        return {"Success": True}, 200
+        return {"Success": True, "message": f"successfully deleted '{path_str}'"}, 200
         
 
 
@@ -249,3 +252,14 @@ class PathFiltering(MethodView):
         Suported operators:
             file_name
         '''
+
+
+# paths = PathModel.query.all()
+# paths_list = [path.__dict__ for path in paths]
+
+# # must decode contents to send over using json.
+# for path in paths_list:
+#     if path["contents"] != None:
+#         path["contents"] = path["contents"].decode()
+
+# return paths_list

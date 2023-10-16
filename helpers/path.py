@@ -115,15 +115,6 @@ def permissions_check(session_id:str, path_type:str,
     return True
 
 
-
-
-
-
-
-
-
-
-
 def octal_to_permission_string(triple):
     if triple < 0 or triple > 777:
         raise ValueError("Invalid permission triple. Must be between 0 and 777.")
