@@ -1,3 +1,4 @@
+# external
 import sys
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
@@ -9,21 +10,25 @@ from models import PathModel
 from schemas import NewPathSchema, PathSchema, UpdatePathSchema
 from session_handler import sessions
 from db import db
-from helpers.utilities import confirm_path
+from helpers.utilities import confirm_path, construct_path
+from helpers.sessions import session_id_check
 
+# path routes object
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
 
+default_permissions = "rwxr-x--x"
 
 @blp.route("/path")
 class Path(MethodView):
     """
-    functions to create paths, get all paths
+    functions to create, read, update, delete paths using a variety of parameters
+        that are clearly defined in the schemas for each route
     """
 
     @blp.arguments(NewPathSchema)
     def post(self, creation_data):
         """
-        create a new file or directory, follow rules of NewPathSchema. path must be a directory. specify
+        create a new file or directory, follow rules of NewPathSchema. 'path' must be a valid directory. specify
         only a pid or a path, not both.
         """
         # setting required parameters
@@ -32,25 +37,8 @@ class Path(MethodView):
         )
 
         # checks for valid session details
-        if (
-            creation_data["session_id"] not in sessions
-            or not sessions[creation_data["session_id"]]["active"]
-        ):
-            abort(
-                409,
-                message="Session ID provided does not exist or is not active, login again...",
-            )
-
-        # checking contents.
-        if (
-            "contents" in creation_data.keys()
-            and creation_data["file_type"] == "directory"
-        ):
-            abort(400, "Cannot pass contents when creating a directory.")
-        elif "contents" in creation_data.keys() and creation_data["file_type"] == "file":
-            new_path.contents = creation_data["contents"].encode() # encoding the string into bytes object
-        elif creation_data["file_type"] == "file":  
-            new_path.contents = bytes(b'') # give it a default binary value
+        if not session_id_check(creation_data["session_id"]):
+            abort(409, message="Session ID provided does not exist or is not active, login again...")
 
         # checking to see the parent directory of the new path.
         #   can be determined by 'pid' or 'path'. If neither are passed
@@ -79,11 +67,33 @@ class Path(MethodView):
                 )
         else:
             new_path.pid = sessions[creation_data["session_id"]]["cwd_id"]
-        
 
-        # set file attributes not needed from user. handled by file system.
+        # check to see if file_name passed already exists in cwd.
+        # prevents duplicates in the entire file system.
+        paths = PathModel.query.filter(PathModel.pid == new_path.pid)
+        for each in paths:
+            if each.file_name == creation_data["file_name"]:
+                abort(
+                    409,
+                    message=f"Path with name - {creation_data['file_name']} already exists in this directory",
+                )
+
+        # checking contents. no contents allowed when creating a directory.
+        if ("contents" in creation_data.keys() 
+            and creation_data["file_type"] == "file"
+        ):
+            new_path.contents = creation_data["contents"].encode() # encoding the string into bytes object
+        elif creation_data["file_type"] == "file": 
+            new_path.contents = bytes(b'')
+        elif (
+            "contents" in creation_data.keys()
+            and creation_data["file_type"] == "directory"
+        ):
+            abort(400, "Cannot pass contents when creating a directory.")
+    
+        # set path attributes not accepted from user on creation of path
         path_type = "d" if creation_data["file_type"] == "directory" else "-"
-        new_path.permissions = f"{path_type}rwxr--r--"  # default permissions
+        new_path.permissions = f"{path_type}{default_permissions}"
     
         new_path.hidden = True if new_path.file_name[0] == "." else False
     
@@ -92,16 +102,6 @@ class Path(MethodView):
         
         new_path.user_id = sessions[creation_data["session_id"]]["user_id"]
         new_path.group_id = sessions[creation_data["session_id"]]["groups"][0] # add their first group id only. 
-
-        # check to see if file_name passed already exists in cwd.
-        # prevents duplicates in our entire file system.
-        paths = PathModel.query.filter(PathModel.pid == new_path.pid)
-        for each in paths:
-            if each.file_name == creation_data["file_name"]:
-                abort(
-                    409,
-                    message=f"Path with name - {creation_data['file_name']} already exists in this directory",
-                )
 
         try:
             db.session.add(new_path)
@@ -115,7 +115,7 @@ class Path(MethodView):
 
         return {
             "Success": True,
-            "message": f"Path name - {new_path.file_name} created in directory id:{new_path.pid}",
+            "message": f"Path name - {new_path.file_name} created in '{construct_path(new_path.pid)}'",
         }, 201
 
     @blp.response(200, PathSchema(many=True))
@@ -136,10 +136,14 @@ class Path(MethodView):
     @blp.arguments(UpdatePathSchema)
     def patch(self, update_data):
         '''
-        update a given path using an absolute path or relative path
-            from your sessions 'cwd' in the file system. more convenient function,
-            you do not have to specify an ID in the url to use. Simply pass a 'path'
+        update a given path, can pass a 'path' to update or simply the 'id' of the Path
         '''
+
+        # checks for valid session details
+        if not session_id_check(update_data["session_id"]):
+            abort(409, message="Session ID provided does not exist or is not active, login again...")
+
+        # grab the id of the path we are working with
         if "path" in update_data.keys():
             id = confirm_path(update_data['path'], update_data['session_id'])[0]
         elif "id" in update_data.keys():
@@ -176,6 +180,14 @@ class Path(MethodView):
             abort(500, message=f"Internal database error\n\n{err}")
 
         return {"Success": True}, 201
+
+    
+    def delete(self, delete_data):
+        '''
+        delete a path, pass a valid absolute or relative path or simply
+            the id of the path. must have session_id included in request 
+            to ensure the permission of the calling session to perform the action
+        '''
 
 
 

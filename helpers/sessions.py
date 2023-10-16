@@ -10,3 +10,15 @@ def session_timer_check():
 
 def rand_string(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
+
+
+def session_id_check(session_id) -> bool:
+    '''
+    returns true if the session is valid
+    returns false if the session is invalid
+    '''
+    return session_id in sessions or \
+        sessions[session_id]["active"]
+
+def update_session_activity(session_id):
+    6
