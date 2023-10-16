@@ -6,12 +6,13 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 
 # internal
-from models import PathModel
+from models import PathModel, UserModel, GroupModel
 from schemas import NewPathSchema, PathSchema, UpdatePathSchema
 from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, construct_path
 from helpers.sessions import session_id_check
+from helpers.path import valid_permissions_check, octal_to_permission_string
 
 # path routes object
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
@@ -128,7 +129,8 @@ class Path(MethodView):
 
         # must decode contents to send over using json.
         for path in paths_list:
-            path["contents"] = path["contents"].decode()
+            if path["contents"] != None:
+                path["contents"] = path["contents"].decode()
 
         return paths_list
     
@@ -149,21 +151,47 @@ class Path(MethodView):
         elif "id" in update_data.keys():
             id = update_data['keys']
         else:
-            abort(400, message="Please pass either a 'path' or 'id' to update a Path")
+            abort(400, message="Please pass either a 'path' or 'id' to update a specific Path")
         
         path = PathModel.query.get_or_404(id)
 
-        # TODO: update session details. need last_active refresher decorator. 
-        # TODO: check the user and group permissions that session has.
-        # TODO: check for permissions passed, ensure they are valid octal set. if valid, add change.
+        # TODO: check the user and group permissions that session has. if neither meet standards, check other
+        # permission_check
+
 
         for key in update_data:
-            # update the attributes passed. if attribute is contents, encode the str to bytes.
             if key == "contents":
                 setattr(path, key, update_data[key].encode())
             elif key == "permissions":
-                #test = permission_check()
-                pass
+                permission_rwx = octal_to_permission_string(update_data["permissions"])\
+                    if valid_permissions_check(update_data["permissions"]) else None
+                temp_type = "d" if path.file_type == "directory" else "-"
+                
+                if permission_rwx != None:
+                    permission_rwx_full = f"{temp_type}{permission_rwx}"
+                    setattr(path, key, permission_rwx_full)
+                else:
+                    abort(400, message=f"invalid permissions --> {update_data['permissions']}")
+
+            elif key == "group_id":
+                group = GroupModel.query.get_or_404(update_data[key], 
+                            description=f"Group with 'group_id':{update_data[key]} does not exist")
+                setattr(path, key, group.id)             
+            
+            elif key == "group_name":
+                group = GroupModel.query.filter(GroupModel.name == update_data['group_name']).first_or_404(
+                    description = f"Group with 'name':{update_data[key]} does not exist")
+                setattr(path, "group_id", group.id)
+        
+            elif key == "user_id":
+                user = UserModel.query.get_or_404(update_data[key], 
+                            description=f"User with 'user_id':{update_data[key]} does not exist")
+                setattr(path, key, user.id)   
+
+            elif key == "username":
+                user = UserModel.query.filter(UserModel.username == update_data[key]).first_or_404(
+                    description = f"User with 'username':{update_data[key]} does not exist")
+                setattr(path, "user_id", user.id)
             else:
                 setattr(path, key, update_data[key])
 
@@ -207,12 +235,6 @@ class PathSpecificID(MethodView):
         db.session.commit()
 
         return {"message": "path deleted successfully"}, 200
-
-    @blp.arguments(UpdatePathSchema)
-    def patch(self, update_data, path_id):
-        """
-        update a path's details by id. change permissions, content, path_location (pid), file_name
-        """
         
 
     @blp.response(200, PathSchema)
