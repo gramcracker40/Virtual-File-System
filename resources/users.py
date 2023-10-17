@@ -1,3 +1,11 @@
+'''
+CRUD functions for Users
+
+
+
+'''
+
+
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from passlib.hash import pbkdf2_sha256
@@ -19,6 +27,8 @@ class Users(MethodView):
     def post(self, user_data):
         '''
         creates a new user, automatically creates a directory with their username in "users"
+        only admins can create new users. 
+
         '''
         if not session_id_check(user_data["session_id"]):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
@@ -42,8 +52,10 @@ class Users(MethodView):
             db.session.add(user)
             db.session.commit()
 
+            # grab new user to set the user_id of the new users directory. 
             newly_made_user = UserModel.query.filter(UserModel.username == user_data['username']).first()
-
+            
+            # builds the starting directory for the user in the file system 
             users_folder = PathModel(
                 file_name=user_data["username"],
                 file_type="directory",
@@ -52,14 +64,13 @@ class Users(MethodView):
                 group_id=1, 
                 file_size=0, 
                 modification_time=datetime.now(), 
-                pid=1, # 1 is the users directory always. 
+                pid=1, # 1 is the users directory always. see initialize_defaults.py
                 hidden=False
             )
 
             db.session.add(users_folder)
             db.session.commit()
         except IntegrityError as err:
-            #duplicate = str(err.orig).split('"')[1]
             abort(409, message=f"User with - {err} - already exists")
 
         except SQLAlchemyError as err:
@@ -74,7 +85,7 @@ class Users(MethodView):
     @blp.response(200, UserSchema(many=True))
     def get(self):
         '''
-        get all users. 
+        get all users. and their group membership. 
         '''
         return UserModel.query.all()
     
@@ -82,6 +93,7 @@ class Users(MethodView):
     def delete(self, user_data):
         '''
         delete a user by passing the user id or the username
+        user must be an admin
         '''
         try:
             if (
@@ -93,6 +105,9 @@ class Users(MethodView):
                     message="Session ID provided does not exist or is not active, login again...",
                 )
 
+            if 2 not in sessions[user_data['session_id']]['groups']: # admin check
+                abort(400, message=f"session user is not an admin and can not create other users")
+
             if "id" in user_data.keys():
                 user = UserModel.query.get_or_404(user_data["id"], description="User ID not found")
             elif "username" in user_data.keys():
@@ -100,7 +115,7 @@ class Users(MethodView):
                     .first_or_404(description="username not found")
             else:
                 abort(400, message="Please pass a valid user id or username")
-            
+
             db.session.delete(user)
             db.session.commit()
 
@@ -111,6 +126,6 @@ class Users(MethodView):
         except SQLAlchemyError as err:
             abort(500, message=f"Internal server error --> {err}")
 
-
+    #add patch method
 
 

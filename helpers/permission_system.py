@@ -1,4 +1,12 @@
-# implements the permissioning systems for paths. 
+'''
+implements the permissioning system for paths.
+
+basically a whole bunch of functions for processing and determining the permissions
+of the logged in session on the specified file. 
+
+see more in the __doc__ strings below
+
+''' 
 from session_handler import sessions
 from models import PathModel
 
@@ -15,17 +23,29 @@ permission_map = {
 
 
 def convert_digit(digit):
+    '''
+    helper function
+    '''
     if digit < 0 or digit > 7:
         raise ValueError("Invalid digit. Must be between 0 and 7.")
 
     return permission_map[digit]
 
 
+
+def valid_permission_octal_check(triple):
+    '''
+    helper function for routes
+    '''
+    return triple >= 0 and triple <= 777
+
+
 def valid_permission_string_check(permission_string) -> bool:
     '''
     given a permission string "-rx-r--r--" return a true/false value
     to determine if the string is valid or not. 
-    length of string passed must be 10
+    length of string passed must be 10. so a final version that has already 
+    determined the type of path. 
     '''
     if len(permission_string) != 10:
         return False
@@ -43,10 +63,6 @@ def valid_permission_string_check(permission_string) -> bool:
             return True
         else:
             return False
-
-
-def valid_permission_octal_check(triple):
-    return triple >= 0 and triple <= 777
 
 
 def octal_to_permission_string(triple):
@@ -73,9 +89,9 @@ def permission_string_to_octal(permission_string: str):
 
 def permissions_check(session_id: str, path: PathModel, permission_needed: str = "r") -> bool:
     '''
-    pass a permission_needed char. if a function require read, pass "r" write: "w" execute "x" 
+    pass a permission_needed char. if a function requires read, pass "r" write: "w" execute "x" 
 
-    permissions will be checked for all functionality. this function handles it
+    permissions will be checked for all functionality. throughout the routes and 
 
     PARAMETERS:
         session_id:        the calling sessions id, used to check the currently logged in 

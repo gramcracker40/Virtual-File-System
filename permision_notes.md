@@ -1,3 +1,5 @@
+PERMISSION SYSTEM NOTES. not the actual implementation. find that and read it in helpers/permission_system.py
+
 In Unix-like systems, file permissions are represented using a combination of three permission types: read, write, and execute. These permissions are associated with three categories of users: owner, group, and others. Here's an explanation of each of these permission types and categories:
 
 1. **Read (r)**:

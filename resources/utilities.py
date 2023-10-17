@@ -1,7 +1,6 @@
 '''
-Define all utility functions in this file. 
-
-examples: 'change_directory', 'long_listing', etc 
+UTILITY METHODS for shell sessions with the file system. 
+'change_directory', 'long_listing', 'print_working_directory', etc.
 
 '''
 from flask.views import MethodView
@@ -14,7 +13,7 @@ from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, change_directory, print_working_directory
 from helpers.sessions import update_session_activity
-from helpers.path import permissions_check
+from helpers.permission_system import permissions_check
 
 blp = Blueprint("utilities", "utilities", description="Implementing functionality for utilities")
 
@@ -24,6 +23,10 @@ class ChangeDirectory(MethodView):
     change the 'cwd' of the passed session_id. 
     can specify absolute or relative path. 
     see, CDschema for further clarity.  
+
+    only admins can enter root. in fact, default users have no rights to anything in 
+    anybody elses section that is built for them whenever they are created as a user by an admin. 
+
     '''
     @blp.arguments(UtilitySchema)
     def post(self, cd_params):

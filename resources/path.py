@@ -1,3 +1,7 @@
+'''
+CRUD HTTP routes on Path objects. See __doc__ strings for more
+'''
+
 # external
 import sys
 from flask.views import MethodView
@@ -12,8 +16,7 @@ from session_handler import sessions
 from db import db
 from helpers.utilities import confirm_path, construct_path
 from helpers.sessions import session_id_check, update_session_activity
-
-from helpers.path import valid_permission_octal_check, octal_to_permission_string, permissions_check, owner_check
+from helpers.permission_system import valid_permission_octal_check, octal_to_permission_string, permissions_check, owner_check
 
 # path routes object
 blp = Blueprint("path", "path", description="Implementing functionality for paths")
@@ -23,8 +26,16 @@ default_permissions = "rwx------"
 @blp.route("/path")
 class Path(MethodView):
     """
-    functions to create, read, update, delete paths using a variety of parameters
-        that are clearly defined in the schemas for each route
+    CRUD operations on paths. 
+    
+    permissioning system in helpers/path.py
+    checks the permissions of the session user making the calls
+    associates the validity very similarly to unix like systems
+    there are some notes in permissions.md to see how the permissions were based
+    
+    there are some nuances be warned. for deletion and update you 
+            must be owner or admin. No group members can do those actions by design. 
+    
     """
     @classmethod
     def id_check(self, data):
@@ -41,8 +52,9 @@ class Path(MethodView):
     @blp.arguments(NewPathSchema)
     def post(self, creation_data):
         """
-        create a new file or directory, follow rules of NewPathSchema. 'path' must be a valid directory. specify
+        create a new file or directory within a directory, follow rules of NewPathSchema. 'path' must be a valid directory. specify
         only a pid or a path, not both.
+            . 
         """
         # setting required parameters
         new_path = PathModel(
@@ -57,14 +69,11 @@ class Path(MethodView):
         #   can be determined by 'pid' or 'path'. If neither are passed
         #   it will use the sessions cwd. can also account for root by simply being 0.
         if "pid" in creation_data.keys():
-            temp = PathModel.query.filter(
-                PathModel.id == creation_data["pid"],
-            ).first_or_404(description="directory does not exist") \
-            if creation_data["pid"] != 0 else 0 # root check
-            
+            temp = PathModel.query.filter(PathModel.id == creation_data["pid"]).\
+            first_or_404(description="directory does not exist") if creation_data["pid"] != 0 else 0 # root check at end
             new_path.pid = temp
         elif "path" in creation_data.keys():
-            id, path = confirm_path(creation_data["path"], creation_data["session_id"])
+            id = confirm_path(creation_data["path"], creation_data["session_id"])[0]
             temp = PathModel.query.get_or_404(
                 id, description="directory does not exist"
             ) if id != 0 else 0 
@@ -198,14 +207,14 @@ class Path(MethodView):
                     abort(400, message="You can not set contents on a directory. ")
             elif key == "permissions":
                 permission_rwx = octal_to_permission_string(update_data["permissions"])\
-                    if valid_permission_octal_check(update_data["permissions"]) else None
+                    if valid_permission_octal_check(update_data["permissions"]) else None # catches value error
                 temp_type = "d" if path.file_type == "directory" else "-"
 
-                # permissions_check to ensure the calling session has rights to change permissions on Path. 
-                if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
-                    abort(400, message="Only the owner of the Path and admins can update the permissions of a path.")
-                
                 if permission_rwx != None:
+                    # must be an owner or a admin to update permissions on a path
+                    if not owner and 2 not in sessions[update_data["session_id"]]["groups"]:
+                        abort(400, message="Only the owner of the Path and admins can update the permissions of a path.")
+
                     permission_rwx_full = f"{temp_type}{permission_rwx}"
                     setattr(path, key, permission_rwx_full)
                 else:
@@ -259,20 +268,21 @@ class Path(MethodView):
     @blp.arguments(DeletePathSchema)
     def delete(self, delete_data):
         '''
-        delete a path, pass a valid absolute or relative path or simply
-            the id of the path. must have session_id included in request 
-            to ensure the permission of the calling session to perform the action
+        delete a path see DeletePathSchema to see required parameters. must define a path or id
         '''
         # checks for valid session details
         if not session_id_check(delete_data["session_id"]):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
 
+        # grab the id and path of the param passed in request
         id = Path.id_check(delete_data)        
         path = PathModel.query.get_or_404(id)
+        
+        # build the "/full/path" and check the owner of the retrieved path, 
         path_str = construct_path(id)
         owner = owner_check(delete_data["session_id"], path)
 
-        # permissions check
+        # permissions check to see if the logged in session user can delete the path
         if not owner and 2 not in sessions[delete_data["session_id"]]["groups"]:
             abort(400, message="Only the owner of the Path and admins can delete a Path")
 

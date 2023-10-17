@@ -1,3 +1,13 @@
+'''
+HTTP Methods on Groups
+
+CRUD operations only
+
+see schemas.py for the smorest Blueprint decorators listed above each class method
+
+'''
+
+
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from db import db
@@ -53,13 +63,15 @@ class Groups(MethodView):
     @blp.arguments(DeleteGroupSchema)
     def delete(self, group_data):
         '''
-        delete a group given the name of the group.  
+        delete a group given the name/id of the group. only admins can delete groups.
         '''
         if not session_id_check(group_data["session_id"]):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
         
+        # seeing which groups the calling member is associated with. 
         session_groups = sessions[group_data['session_id']]['groups']
 
+        # determining the parameter passed to filter on group
         if "name" in group_data.keys():
             group = GroupModel.query.filter(GroupModel.name == group_data['name']).first_or_404(description="Could not find a group with the name passed")
         elif "id" in group_data.keys():
@@ -67,11 +79,13 @@ class Groups(MethodView):
         else:
             abort(400, message="Please pass a 'name' or 'id' of a valid group to delete a group.")
 
-        if group.id not in session_groups:
+        # only admins can delete groups
+        if group.id not in session_groups and sessions[group_data['session_id']]['admin']:
             abort(400, message="You can not delete a group you are not a member of.")
 
         db.session.delete(group)
         db.session.commit()
+
         update_session_activity(group_data["session_id"])
 
         return {"Success": True, "message": f"group {group.name} deleted successfully"}, 200
@@ -87,7 +101,8 @@ class Groups(MethodView):
             abort(409, message="Session ID provided does not exist or is not active, login again...")
 
         session_groups = sessions[update_data["session_id"]]["groups"]
-
+        
+        # checking for group to perform action on 
         if "group_id" in update_data.keys():
             group = GroupModel.query.get_or_404(update_data["group_id"])
         elif "group_name" in update_data.keys():
@@ -96,7 +111,7 @@ class Groups(MethodView):
         if group.id not in session_groups:
             abort(400, message="session user is not in the group and cannot add/remove on the group")
 
-
+        # checking for user to perform action on 
         if "user_id" in update_data.keys():
             user = UserModel.query.get_or_404(update_data["user_id"])
         elif "username" in update_data.keys():
@@ -104,6 +119,7 @@ class Groups(MethodView):
         else:
             abort(400, message="Please specify either a user_id or username of a user to add to this group")
 
+        # determining the 'action' to do with verified group and user
         try:
             if update_data["action"] == "add" and user not in group.users:
                 group.users.append(user)
@@ -111,14 +127,14 @@ class Groups(MethodView):
             elif update_data["action"] == "remove" and user in group.users:
                 group.users.remove(user)
                 sessions[update_data["session_id"]]["groups"].remove(group.id)
-        except ValueError as err:
+        except ValueError as err: #edge case
             abort(400, message="User is not in group")
         
-
+        # commit to the database
         db.session.add(group)
         db.session.add(user)
         db.session.commit()
+        
         update_session_activity(update_data["session_id"])
-
 
         return {"Success":True}, 201
