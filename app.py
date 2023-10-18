@@ -76,7 +76,7 @@ def app():
         # test for defaults. 
         default = GroupModel.query.filter(GroupModel.name == "default").first()
         root = UserModel.query.filter(UserModel.username == "root").first()
-        if default == None and root == None:
+        if default == None and root == None :
             build_initial_structure()
     
     

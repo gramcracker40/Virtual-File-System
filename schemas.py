@@ -103,3 +103,10 @@ class UtilitySchema(Schema):
     
 class SessionDeleteSchema(Schema):
     session_id = fields.Str(required=True)
+
+class CopySchema(Schema):
+    session_id = fields.Str(required=True)
+    copy_path = fields.Str(required=True)
+    destination_directory = fields.Str(required=True)
+
+

@@ -1,9 +1,9 @@
 from models.path import PathModel
 from flask_smorest import abort
 from session_handler import sessions
-from errors import InsufficientParamaters
-import requests, json
-from helpers.path import permissions_check
+from db import db
+from helpers.permission_system import permissions_check
+from datetime import datetime
 
 def construct_path(id:int) -> str:
     path = ""
@@ -12,10 +12,7 @@ def construct_path(id:int) -> str:
     if id == 0:
         return "/"
          
-
     # Starting point of the path based on the id
-    # path_itr = PathModel.query.filter(PathModel.id == id).first()
-    # pid = path_itr.pid
     temp_id = id
 
     # Iterate over every parent directory and add the name to the path
@@ -116,16 +113,6 @@ def confirm_path(path:str, session_id:str) -> (int, str):
         return (last_id, construct_path(last_id))
 
 
-def confirm_path_by_id(id:int = None, session_id:str = None) -> (int, str):
-    try:
-        if not session_id and not id:
-            raise InsufficientParamaters
-        path = construct_path(sessions[session_id]["cwd_id"]) if session_id else construct_path(id)
-        return (id, path)
-    except InsufficientParamaters as e:
-        print(e.message)
-
-
 def change_directory(path:str = None, session_id:str = None) -> str:
     id,path = confirm_path(path, session_id)
     
@@ -136,7 +123,7 @@ def change_directory(path:str = None, session_id:str = None) -> str:
         if id != 0 else 0
 
     if model == 0:
-        if 2 in sessions[session_id]["groups"]:
+        if 2 in sessions[session_id]["groups"]: # only admin can be inside of root.
             sessions[session_id]["cwd_id"] = id 
             return f"/"
         else:
@@ -154,3 +141,65 @@ def print_working_directory(session_id:str = None) -> str:
     cwd_id = sessions[session_id]["cwd_id"]
     path = construct_path(cwd_id)
     return path
+
+
+def copy_directory_structure(copy_directory:PathModel, dir_counter:int, dir_structure:dict):
+    '''
+    recursively copy the sub-structure of the directory being copied
+    '''
+    for path in PathModel.query.filter(PathModel.pid == copy_directory.id).all():
+        dir_counter += 1
+        if path.file_type == "file":
+            dir_structure[dir_counter] = path
+        else:
+            dir_structure[dir_counter] = {
+                "directory": path,
+                "sub_directories": copy_directory_structure(path, path.pid, dir_structure)
+            }
+    print(f"dir_structure: {dir_structure}")
+ 
+    return dir_structure
+
+def commit_copied_structure(dir_structure:dict, dest_pid:int):
+    '''
+    recursively commit the copied structure and rebuild the exact same structure on the destination path
+    '''
+    # dir structure fully replicated.
+
+    for dir_num in dir_structure['sub_directories']:
+        if type(dir_structure['sub_directories'][dir_num]) == PathModel:
+            temp = PathModel(
+                    pid=dest_pid, # change the pid of the newly create path to the destination path
+                    file_name=dir_structure['sub_directories'][dir_num].file_name,
+                    file_type=dir_structure['sub_directories'][dir_num].file_type,
+                    file_size=dir_structure['sub_directories'][dir_num].file_size,
+                    permissions=dir_structure['sub_directories'][dir_num].permissions,
+                    modification_time=datetime.now(),
+                    contents=dir_structure['sub_directories'][dir_num].contents,
+                    hidden=dir_structure['sub_directories'][dir_num].hidden,
+                    user_id=dir_structure['sub_directories'][dir_num].user_id,
+                    group_id=dir_structure['sub_directories'][dir_num].group_id,
+                )
+            db.session.add(temp)
+            db.session.commit()
+        
+        else: # subdirectories
+
+            temp = PathModel(
+                    pid=dest_pid, # change the pid of the newly create path to the destination path
+                    file_name=dir_structure['sub_directories'][dir_num]['directory'].file_name,
+                    file_type=dir_structure['sub_directories'][dir_num]['directory'].file_type,
+                    file_size=dir_structure['sub_directories'][dir_num]['directory'].file_size,
+                    permissions=dir_structure['sub_directories'][dir_num]['directory'].permissions,
+                    modification_time=datetime.now(),
+                    contents=dir_structure['sub_directories'][dir_num]['directory'].contents,
+                    hidden=dir_structure['sub_directories'][dir_num]['directory'].hidden,
+                    user_id=dir_structure['sub_directories'][dir_num]['directory'].user_id,
+                    group_id=dir_structure['sub_directories'][dir_num]['directory'].group_id,
+                )
+            db.session.add(temp)
+            db.session.commit()
+
+            commit_copied_structure(dir_structure['sub_directories'][dir_num], temp.id)
+
+    return dest_pid
